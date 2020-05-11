@@ -4,22 +4,29 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 module.exports = {
     entry: {
-        index: './src/index.js'
+        index: './src/index.tsx'
     },
 
     module: {
         rules: [
             {
-                test: /\.js$/,
+                test: /\.(ts|js)x?$/,
                 exclude: /node_modules/,
                 use: {
                     loader: 'babel-loader',
                     options: {
-                        presets: ['@babel/preset-env', '@babel/preset-react']
+                        presets: [
+                            '@babel/preset-env',
+                            '@babel/preset-react',
+                            '@babel/preset-typescript'
+                        ]
                     }
                 }
             },
         ]
+    },
+    resolve: {
+        extensions: [ '.tsx', '.ts', '.jsx', '.js' ]
     },
     plugins: [
         new HtmlWebpackPlugin({

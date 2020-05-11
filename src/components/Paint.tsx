@@ -1,9 +1,9 @@
 import React, { useRef } from 'react';
 
-function drawTest(canvas) {
+function drawTest(canvas: HTMLCanvasElement) {
     if (!canvas.getContext) return;
 
-    const context = canvas.getContext('2d');
+    const context: CanvasRenderingContext2D = canvas.getContext('2d');
 
     const center = {
         x: canvas.width / 2,
@@ -17,7 +17,8 @@ function drawTest(canvas) {
     context.fillRect(center.x + 10, center.y + 10, 50, 50);
 }
 
-function drawLine(context, start, end) {
+function drawLine(context: CanvasRenderingContext2D,
+                  start: number[], end: number[]) {
     context.beginPath();
     context.strokeStyle = 'black';
     context.lineWidth = 10;

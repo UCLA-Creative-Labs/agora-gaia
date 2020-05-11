@@ -1,6 +1,6 @@
 import React from 'react';
 
-import Paint from './Paint.js';
+import Paint from './Paint.tsx';
 
 import './styles/App.scss';
 
