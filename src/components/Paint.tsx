@@ -85,13 +85,16 @@ function Paint(props: PaintProps) {
                 isDrawing.current = false;
 
                 if (currentCoordPath.current[0].length == 0) return;
+
                 const context: CanvasRenderingContext2D = canvasRef.current.getContext('2d');
                 undrawFromCoordPath(context, currentCoordPath.current);
                 drawFromCoordPath(context, currentCoordPath.current);
 
-                coordPathStack.current.push(currentCoordPath.current);
+                // Weird quirk: this doesn't work:
+                // coordPathStack.current.push(currentCoordPath.current);
+                // But this does:
+                coordPathStack.current.push([currentCoordPath.current[0], currentCoordPath.current[1]]);
                 currentCoordPath.current[0] = []
-
                 console.log(coordPathStack);
             }}
             onMouseMove = {e => {
