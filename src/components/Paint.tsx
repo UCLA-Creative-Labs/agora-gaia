@@ -23,7 +23,6 @@ function drawLine(context: CanvasRenderingContext2D,
 function drawLineFromCoordPath(context: CanvasRenderingContext2D,
                            coordPath: [Coord[], number]) {
     context.beginPath();
-    // context.lineWidth = coordPath[1];
     context.moveTo(coordPath[0][0].x, coordPath[0][0].y);
     coordPath[0].forEach(coord => {
         context.lineTo(coord.x, coord.y);
@@ -39,7 +38,6 @@ function drawCurveFromCoordPath(context: CanvasRenderingContext2D,
     context.beginPath();
     context.strokeStyle = 'black';
     context.lineWidth = coordPath[1];
-    // context.moveTo(coordPath[0][0].x, coordPath[0][0].y);
     let i;
     const num_coords = coordPath[0].length;
     for (i = 0; i < num_coords; i += smoothness) {
@@ -59,10 +57,8 @@ function undrawFromCoordPath(context: CanvasRenderingContext2D,
     context.save();
     context.globalCompositeOperation = "destination-out";
     context.lineWidth = coordPath[1] + 1;
-    console.log(context);
     drawLineFromCoordPath(context, coordPath);
     context.restore();
-    console.log(context);
     // coordPath[1]--;
 }
 
@@ -116,12 +112,13 @@ function Paint(props: PaintProps) {
                 undrawFromCoordPath(context, currentCoordPath.current);
                 drawCurveFromCoordPath(context, currentCoordPath.current, props.smoothness);
 
+                // UPDATE regarding the comment below: Chrome prints to the console asynchronously,
+                // so it might just be an effect of that.
                 // Weird quirk: this doesn't work:
                 // coordPathStack.current.push(currentCoordPath.current);
                 // But this does:
                 coordPathStack.current.push([currentCoordPath.current[0], currentCoordPath.current[1]]);
                 currentCoordPath.current[0] = []
-                console.log(coordPathStack);
             }}
             onMouseMove = {e => {
                 if (e.button != 0) return;
