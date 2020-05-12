@@ -1,47 +1,73 @@
 import React, { useRef } from 'react';
 
 interface PaintProps {
-    width: number, height: number, lineWidth: number
+    width: number, height: number, lineWidth: number, smoothness: number
+}
+
+interface Coord {
+    x: number, y: number
 }
 
 function drawLine(context: CanvasRenderingContext2D,
-                  start: [number, number], end: [number, number],
+                  start: Coord, end: Coord,
                   lineWidth: number) {
     context.beginPath();
     context.strokeStyle = 'black';
     context.lineWidth = lineWidth;
-    context.moveTo(start[0], start[1]);
-    context.lineTo(end[0], end[1]);
+    context.moveTo(start.x, start.y);
+    context.lineTo(end.x, end.y);
     context.stroke();
     context.closePath();
 }
 
-function drawFromCoordPath(context: CanvasRenderingContext2D,
-                           coordPath: [[number, number][], number]) {
+function drawLineFromCoordPath(context: CanvasRenderingContext2D,
+                           coordPath: [Coord[], number]) {
     context.beginPath();
-    context.strokeStyle = 'black';
-    context.lineWidth = coordPath[1];
-    context.moveTo(coordPath[0][0][0], coordPath[0][0][1]);
+    // context.lineWidth = coordPath[1];
+    context.moveTo(coordPath[0][0].x, coordPath[0][0].y);
     coordPath[0].forEach(coord => {
-        context.lineTo(coord[0], coord[1]);
+        context.lineTo(coord.x, coord.y);
         context.stroke();
-        context.moveTo(coord[0], coord[1]);
+        context.moveTo(coord.x, coord.y);
     });
     context.closePath();
 }
 
+function drawCurveFromCoordPath(context: CanvasRenderingContext2D,
+                                coordPath: [Coord[], number],
+                                smoothness: number) {
+    context.beginPath();
+    context.strokeStyle = 'black';
+    context.lineWidth = coordPath[1];
+    // context.moveTo(coordPath[0][0].x, coordPath[0][0].y);
+    let i;
+    const num_coords = coordPath[0].length;
+    for (i = 0; i < num_coords; i += smoothness) {
+        const coord = coordPath[0][i],
+              nextCoord = coordPath[0][Math.min(i + smoothness, num_coords - 1)];
+        let x_next_avg = (coord.x + nextCoord.x) / 2,
+            y_next_avg = (coord.y + nextCoord.y) / 2;
+        context.quadraticCurveTo(coord.x, coord.y, x_next_avg, y_next_avg);
+        context.stroke();
+    }
+    context.closePath();
+}
+
 function undrawFromCoordPath(context: CanvasRenderingContext2D,
-                             coordPath: [[number, number][], number]) {
-    const prevStrokeStyle = context.strokeStyle;
+                             coordPath: [Coord[], number]) {
+    // coordPath[1]++;
+    context.save();
     context.globalCompositeOperation = "destination-out";
-    context.strokeStyle = 'rgba(0,0,0,1.0)';
-    drawFromCoordPath(context, coordPath);
-    context.globalCompositeOperation = "source-over";
-    context.strokeStyle = prevStrokeStyle;
+    context.lineWidth = coordPath[1] + 1;
+    console.log(context);
+    drawLineFromCoordPath(context, coordPath);
+    context.restore();
+    console.log(context);
+    // coordPath[1]--;
 }
 
 function undo(context: CanvasRenderingContext2D,
-              coordPathStack: [[number, number][], number][]) {
+              coordPathStack: [Coord[], number][]) {
     undrawFromCoordPath(context, coordPathStack.pop());
 }
 
@@ -49,14 +75,14 @@ function Paint(props: PaintProps) {
     const canvasRef = useRef(null);
     const isDrawing = useRef(false);
 
-    const mousePos: React.MutableRefObject<[number, number]> = useRef([0, 0]);
+    const mousePos: React.MutableRefObject<Coord> = useRef({ x: 0, y:0 });
 
     // A list of mouse positions, which are stored as a two-element list.
     const currentCoordPath:
-        React.MutableRefObject<[[number, number][], number]> = useRef([[], props.lineWidth]);
+        React.MutableRefObject<[Coord[], number]> = useRef([[], props.lineWidth]);
     // A stack of mouse position lists, which track the path taken by the mouse
     const coordPathStack:
-        React.MutableRefObject<[[number, number][], number][]> = useRef([]);
+        React.MutableRefObject<[Coord[], number][]> = useRef([]);
 
     // TODO: Move <canvas> event handlers into separate functions. All those
     //       .currents are ugly :'(
@@ -73,22 +99,22 @@ function Paint(props: PaintProps) {
                 const canvas = canvasRef.current;
                 const bounds = canvas.getBoundingClientRect();
 
-                mousePos.current = [ e.clientX - bounds.left, 
-                                     e.clientY - bounds.top ];
+                mousePos.current = { x: e.clientX - bounds.left, 
+                                     y: e.clientY - bounds.top };
                 isDrawing.current = true;
-                currentCoordPath.current[0] = [];
+                currentCoordPath.current[0] = [ mousePos.current ];
             }}
             onMouseUp = {e => {
                 if (e.button != 0) return;
 
-                mousePos.current = [ 0, 0 ];
+                mousePos.current = { x: 0, y: 0 };
                 isDrawing.current = false;
 
                 if (currentCoordPath.current[0].length == 0) return;
 
                 const context: CanvasRenderingContext2D = canvasRef.current.getContext('2d');
                 undrawFromCoordPath(context, currentCoordPath.current);
-                drawFromCoordPath(context, currentCoordPath.current);
+                drawCurveFromCoordPath(context, currentCoordPath.current, props.smoothness);
 
                 // Weird quirk: this doesn't work:
                 // coordPathStack.current.push(currentCoordPath.current);
@@ -105,11 +131,11 @@ function Paint(props: PaintProps) {
                 const bounds = canvas.getBoundingClientRect();
 
                 if (isDrawing.current) {
-                    currentCoordPath.current[0].push(mousePos.current);
-
-                    const end: [number, number] = [ e.clientX - bounds.left,
-                                                    e.clientY - bounds.top ];
+                    const end: Coord = { x: e.clientX - bounds.left,
+                                         y: e.clientY - bounds.top };
                     drawLine(context, mousePos.current, end, props.lineWidth);
+
+                    currentCoordPath.current[0].push(mousePos.current);
                     mousePos.current = end;
                 }
             }}
