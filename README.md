@@ -7,3 +7,8 @@ Run `yarn install` to install all dependencies.
 **To develop:** Run `yarn start` to start a local development server at http://localhost:8080.
 
 **To build:** Run `yarn build` to generate build versions of the website in the `dist/` folder, then open `dist/index.html` to open the website.
+
+## Known bugs
+
+* Especially fast strokes leave a little tail behind after being "undrawn" and redrawn. Probably because the last couple of mouse movements aren't being stored.
+* Undrawing and redrawing produces an un-antialiased drawing. Not too big a deal, but it can be a little frustrating.
