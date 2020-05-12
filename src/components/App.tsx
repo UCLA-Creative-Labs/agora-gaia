@@ -12,6 +12,7 @@ function App() {
                 height={800}
                 lineWidth={2}
                 smoothness={2}
+                thinning={0.3}
             />
         </div>
     );

@@ -1,7 +1,10 @@
 import React, { useRef } from 'react';
 
 interface PaintProps {
-    width: number, height: number, lineWidth: number, smoothness: number
+    width: number, height: number,
+    lineWidth: number,
+    smoothness: number,
+    thinning?: number
 }
 
 interface Coord {
@@ -34,10 +37,10 @@ function drawLineFromCoordPath(context: CanvasRenderingContext2D,
 
 function drawCurveFromCoordPath(context: CanvasRenderingContext2D,
                                 coordPath: [Coord[], number],
-                                smoothness: number) {
+                                smoothness: number, thinning: number = 0) {
     context.beginPath();
-    context.strokeStyle = 'black';
-    context.lineWidth = coordPath[1];
+    context.strokeStyle = 'black'; // TODO: Move out of this method
+    context.lineWidth = coordPath[1] - thinning;
     let i;
     const num_coords = coordPath[0].length;
     for (i = 0; i < num_coords; i += smoothness) {
@@ -110,7 +113,7 @@ function Paint(props: PaintProps) {
 
                 const context: CanvasRenderingContext2D = canvasRef.current.getContext('2d');
                 undrawFromCoordPath(context, currentCoordPath.current);
-                drawCurveFromCoordPath(context, currentCoordPath.current, props.smoothness);
+                drawCurveFromCoordPath(context, currentCoordPath.current, props.smoothness, props.thinning);
 
                 // UPDATE regarding the comment below: Chrome prints to the console asynchronously,
                 // so it might just be an effect of that.
