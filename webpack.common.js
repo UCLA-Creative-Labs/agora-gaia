@@ -22,15 +22,6 @@ module.exports = {
                         ]
                     }
                 }
-            },
-            {
-                test: /\.(png|svg|jpe?g|gif)$/i,
-                use: {
-                    loader: 'file-loader',
-                    options: {
-                        name: 'assets/[name].[ext]'
-                    }
-                }
             }
         ]
     },
