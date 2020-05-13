@@ -6,7 +6,7 @@ import './styles/App.scss';
 
 function App() {
     return (
-        <div>
+        <div className='wrapper'>
             <Paint
                 width={1000}
                 height={800}

@@ -98,6 +98,8 @@ function Paint(props: PaintProps) {
                     const context = canvas.getContext('2d');
                     const bounds = canvas.getBoundingClientRect();
 
+                    const mouseScreenPos = { x: e.clientX, y: e.clientY };
+
                     if (isDrawing.current) {
                         const end: Coord = { x: e.clientX - bounds.left,
                                              y: e.clientY - bounds.top };
