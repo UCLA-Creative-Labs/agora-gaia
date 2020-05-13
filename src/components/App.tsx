@@ -19,7 +19,7 @@ function App() {
                     'green',
                     'blue', 'indigo', 'violet'
                 ]}
-                maxStrokeLen={500}
+                maxStrokeLen={0}
             />
         </div>
     );

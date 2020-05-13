@@ -1,3 +1,5 @@
+import { Coord, distance } from './MathUtils';
+
 // Interface to hold properties for this component.
 export interface PaintProps {
     width: number, height: number,
@@ -8,17 +10,8 @@ export interface PaintProps {
     maxStrokeLen?: number   // Optional
 }
 
-// Interface to avoid having to type { x: number, y: number } everywhere.
-export interface Coord {
-    x: number, y: number
-}
-
 export interface CoordPath {
     pos: Coord[], width: number, color?: string
-}
-
-export function distance(a: Coord, b: Coord) {
-    return Math.hypot(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
 }
 
 export function drawLine(context: CanvasRenderingContext2D,

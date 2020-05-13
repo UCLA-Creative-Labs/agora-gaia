@@ -1,12 +1,16 @@
 import React, { useRef } from 'react';
 
 import {
-    PaintProps, Coord, CoordPath,
+    PaintProps, CoordPath,
     drawLine,
     drawLineFromCoordPath, drawCurveFromCoordPath,
     undrawLineFromCoordPath, undrawCurveFromCoordPath,
-    undo, distance
+    undo
 } from '../utils/PaintUtils';
+import {
+    Coord, distance
+} from '../utils/MathUtils';
+
 import './styles/Paint.scss';
 
 import UndoImg from '../assets/icons/undo-black-18dp.svg';
@@ -110,6 +114,11 @@ function Paint(props: PaintProps) {
 
                         mousePos.current = end;
                     }
+                }}
+                onMouseLeave = {e => {
+                    canvasRef.current.dispatchEvent(new MouseEvent('mouseup', {
+                        bubbles: true, cancelable: true, view: window
+                    }));
                 }}>
             </canvas>
             <button
