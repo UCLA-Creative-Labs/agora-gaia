@@ -1,10 +1,19 @@
 // Canvas styles
 
-#canvas-wrapper {
+#all-wrapper {
     width: 100%;
     height: 100%;
-    display: inline-block;
+    display: flex;
     text-align: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+#canvas-wrapper {
+    display: flex;
+    flex-direction: row;
+    align-items: top;
+    padding-left: 70px; // To center it relative to color buttons
 }
 
 #paint-canvas {
@@ -22,6 +31,11 @@ button:focus {
     outline: none;
 }
 
+button {
+    text-align: center;
+    padding-left: 10px; // Needed to center button icon
+}
+
 .side-btn {
     vertical-align: top;
     width: 50px;
@@ -34,6 +48,7 @@ button:focus {
     filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.4));
     transition: 0.2s;
     position: relative;
+    display: flex;
 }
 
 .side-btn:hover {
@@ -46,7 +61,27 @@ button:focus {
     filter: drop-shadow(0px 2px 1px rgba(0,0,0,0.4));
 }
 
+#zoomin-btn {
+}
+
+#zoomout-btn {
+}
+
+#color-btns {
+    width: 100%;
+}
+
 .color-btn {
+    vertical-align: top;
+    width: 50px;
+    height: 50px;
+    background: white;
+    border: 0px;
+    border-radius: 50%;
+    margin-top: 20px;
+    margin-left: 20px;
+    filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.4));
+    transition: 0.2s;
     position: relative;
     margin-right: 0px;
 }

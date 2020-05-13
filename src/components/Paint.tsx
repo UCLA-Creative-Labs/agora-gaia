@@ -14,6 +14,8 @@ import {
 import './styles/Paint.scss';
 
 import UndoImg from '../assets/icons/undo-black-18dp.svg';
+import ZoomInImg from '../assets/icons/add-black-18dp.svg';
+import ZoomOutImg from '../assets/icons/remove-black-18dp.svg';
 
 function Paint(props: PaintProps) {
     const canvasRef: React.MutableRefObject<HTMLCanvasElement> = useRef(null);
@@ -39,117 +41,144 @@ function Paint(props: PaintProps) {
     // TODO: Move <canvas> event handlers into separate functions. All those
     //       .currents are ugly :'(
     return (
-        <div id='canvas-wrapper'>
-            <canvas
-                width={props.width}
-                height={props.height}
-                ref={canvasRef}
-                id='paint-canvas'
-                onMouseDown = {e => {
-                    // Only proceed if the left mouse is pressed
-                    if (e.button != 0) return;
+        <div id='all-wrapper'>
+            <div id='canvas-wrapper'>
+                <canvas
+                    width={props.width}
+                    height={props.height}
+                    ref={canvasRef}
+                    id='paint-canvas'
+                    onMouseDown = {e => {
+                        // Only proceed if the left mouse is pressed
+                        if (e.button != 0) return;
 
-                    const canvas = canvasRef.current;
-                    const bounds = canvas.getBoundingClientRect();
+                        const canvas = canvasRef.current;
+                        const bounds = canvas.getBoundingClientRect();
 
-                    // Calculate the mouse position relative to the <canvas> element.
-                    mousePos.current = { x: e.clientX - bounds.left, 
-                                         y: e.clientY - bounds.top };
-                    isDrawing.current = true;
-                    currentCoordPath.current.pos = [ mousePos.current ];
-                    coordPathLen.current = 0;
-                }}
-                onMouseUp = {e => {
-                    // Only proceed if the left mouse is pressed and isDrawing
-                    if (e.button != 0 || !isDrawing) return;
-
-                    mousePos.current = { x: 0, y: 0 };
-                    isDrawing.current = false;
-                    console.log(coordPathLen);
-
-                    if (currentCoordPath.current.pos.length == 0) return;
-
-                    // Erase the drawn line and redraw a curve approximation.
-                    const context = canvasRef.current.getContext('2d');
-                    undrawLineFromCoordPath(context, currentCoordPath.current);
-                    // Uncomment this and comment drawCurveFromCoordPath to redraw the exact
-                    // line drawn by the user.
-                    // (Note: this is still apparently un-antialiased for some reason :( )
-                    // drawLineFromCoordPath(context, currentCoordPath.current);
-                    drawCurveFromCoordPath(context, currentCoordPath.current,
-                                           props.smoothness, props.thinning);
-
-                    // Weird quirk: this doesn't work:
-                    // coordPathStack.current.push(currentCoordPath.current);
-                    // But this does:
-                    coordPathStack.current.push({
-                        pos: currentCoordPath.current.pos,
-                        width: currentCoordPath.current.width,
-                        color: currentCoordPath.current.color
-                    });
-
-                    // Reset the path
-                    currentCoordPath.current.pos = []
-                }}
-                onMouseMove = {e => {
-                    // Only proceed if the left mouse is pressed
-                    if (e.button != 0 || !isDrawing) return;
-
-                    const canvas = canvasRef.current;
-                    const context = canvas.getContext('2d');
-                    const bounds = canvas.getBoundingClientRect();
-
-                    const mouseScreenPos = { x: e.clientX, y: e.clientY };
-
-                    if (isDrawing.current) {
-                        const end: Coord = { x: e.clientX - bounds.left,
+                        // Calculate the mouse position relative to the <canvas> element.
+                        mousePos.current = { x: e.clientX - bounds.left, 
                                              y: e.clientY - bounds.top };
-                        drawLine(context, mousePos.current, end, props.lineWidth);
+                        isDrawing.current = true;
+                        currentCoordPath.current.pos = [ mousePos.current ];
+                        coordPathLen.current = 0;
+                    }}
+                    onMouseUp = {e => {
+                        // Only proceed if the left mouse is pressed and isDrawing
+                        if (e.button != 0 || !isDrawing) return;
 
-                        currentCoordPath.current.pos.push(end);
-                        coordPathLen.current += distance(mousePos.current, end);
+                        mousePos.current = { x: 0, y: 0 };
+                        isDrawing.current = false;
 
-                        if (props.maxStrokeLen && coordPathLen.current >= props.maxStrokeLen) {
-                            canvas.dispatchEvent(new MouseEvent('mouseup', {
+                        if (currentCoordPath.current.pos.length == 0) return;
+
+                        // Erase the drawn line and redraw a curve approximation.
+                        const context = canvasRef.current.getContext('2d');
+                        undrawLineFromCoordPath(context, currentCoordPath.current);
+                        // Uncomment this and comment drawCurveFromCoordPath to redraw the exact
+                        // line drawn by the user.
+                        // (Note: this is still apparently un-antialiased for some reason :( )
+                        // drawLineFromCoordPath(context, currentCoordPath.current);
+                        drawCurveFromCoordPath(context, currentCoordPath.current,
+                                               props.smoothness, props.thinning);
+
+                        // Weird quirk: this doesn't work:
+                        // coordPathStack.current.push(currentCoordPath.current);
+                        // But this does:
+                        coordPathStack.current.push({
+                            pos: currentCoordPath.current.pos,
+                            width: currentCoordPath.current.width,
+                            color: currentCoordPath.current.color
+                        });
+
+                        // Reset the path
+                        currentCoordPath.current.pos = []
+                    }}
+                    onMouseMove = {e => {
+                        // Only proceed if the left mouse is pressed
+                        if (e.button != 0 || !isDrawing) return;
+
+                        const canvas = canvasRef.current;
+                        const context = canvas.getContext('2d');
+                        const bounds = canvas.getBoundingClientRect();
+
+                        const mouseScreenPos = { x: e.clientX, y: e.clientY };
+
+                        if (isDrawing.current) {
+                            const end: Coord = { x: e.clientX - bounds.left,
+                                                 y: e.clientY - bounds.top };
+                            drawLine(context, mousePos.current, end, props.lineWidth);
+
+                            currentCoordPath.current.pos.push(end);
+                            coordPathLen.current += distance(mousePos.current, end);
+
+                            if (props.maxStrokeLen && coordPathLen.current >= props.maxStrokeLen) {
+                                canvas.dispatchEvent(new MouseEvent('mouseup', {
+                                    bubbles: true, cancelable: true
+                                }));
+                            }
+
+                            mousePos.current = end;
+                        }
+                    }}
+                    onMouseLeave = {e => {
+                        if (isDrawing.current)
+                            canvasRef.current.dispatchEvent(new MouseEvent('mouseup', {
                                 bubbles: true, cancelable: true
                             }));
-                        }
-
-                        mousePos.current = end;
-                    }
-                }}
-                onMouseLeave = {e => {
-                    canvasRef.current.dispatchEvent(new MouseEvent('mouseup', {
-                        bubbles: true, cancelable: true
-                    }));
-                }}>
-                {'Your browser doesn\'t support <canvas> elements :('}
-            </canvas>
-            <button
-                onClick = {_ => {
-                    const context = canvasRef.current.getContext('2d');
-                    undo(context, coordPathStack.current, props.smoothness);
-                    context.strokeStyle = currentCoordPath.current.color;
-                    context.lineWidth = currentCoordPath.current.width;
-                }}
-                className='side-btn'
-                id='undo-btn'>
-                <img src={UndoImg} style={{'width':'30px', 'height':'30px'}}/>
-            </button>
-            <br />
-            {colors.map(color => {
-                return (
+                    }}
+                    onWheel={e => {
+                        // TODO: Use e.deltaY to zoom into the canvas?
+                    }}>
+                    {'Your browser doesn\'t support <canvas> elements :('}
+                </canvas>
+                <span id='draw-controls'>
                     <button
-                        key = {color+'-btn'}
                         onClick = {_ => {
                             const context = canvasRef.current.getContext('2d');
-                            context.strokeStyle = color;
-                            currentCoordPath.current.color = color;
+                            undo(context, coordPathStack.current, props.smoothness);
+                            context.strokeStyle = currentCoordPath.current.color;
+                            context.lineWidth = currentCoordPath.current.width;
                         }}
-                        className = 'side-btn color-btn'
-                        style = {{ 'background': color }}/>
-                );
-            })}
+                        className='side-btn'
+                        id='undo-btn'>
+                        <img src={UndoImg} style={{'width':'30px', 'height':'30px'}}/>
+                    </button>
+                    <button
+                        onClick = {_ => {
+                            // TODO
+                            console.log('zoom in');
+                        }}
+                        className='side-btn'
+                        id='zoomin-btn'>
+                        <img src={ZoomInImg} style={{'width':'30px', 'height':'30px'}}/>
+                    </button>
+                    <button
+                        onClick = {_ => {
+                            // TODO
+                            console.log('zoom out');
+                        }}
+                        className='side-btn'
+                        id='zoomout-btn'>
+                        <img src={ZoomOutImg} style={{'width':'30px', 'height':'30px'}}/>
+                    </button>
+                </span>
+            </div>
+            <br />
+            <div id='color-btns'>
+                {colors.map(color => {
+                    return (
+                        <button
+                            key = {color+'-btn'}
+                            onClick = {_ => {
+                                const context = canvasRef.current.getContext('2d');
+                                context.strokeStyle = color;
+                                currentCoordPath.current.color = color;
+                            }}
+                            className = 'color-btn'
+                            style = {{ 'background': color }}/>
+                    );
+                })}
+            </div>
         </div>
     )
 }
