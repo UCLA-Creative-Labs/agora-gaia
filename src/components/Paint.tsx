@@ -154,7 +154,7 @@ function Paint(props: PaintProps) {
                                          y: e.clientY - bounds.top };
                     drawLine(context, mousePos.current, end, props.lineWidth);
 
-                    currentCoordPath.current[0].push(mousePos.current);
+                    currentCoordPath.current[0].push(end);
                     mousePos.current = end;
                 }
             }}
