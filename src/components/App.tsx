@@ -6,7 +6,7 @@ import './styles/App.scss';
 
 function App() {
     return (
-        <div className="test">
+        <div>
             <Paint
                 width={1000}
                 height={800}

@@ -15,7 +15,7 @@ export function drawLine(context: CanvasRenderingContext2D,
                   start: Coord, end: Coord,
                   lineWidth: number) {
     context.beginPath();
-    context.strokeStyle = 'black';
+    // context.strokeStyle = 'black';
     context.lineWidth = lineWidth;
     context.moveTo(start.x, start.y);
     context.lineTo(end.x, end.y);
@@ -39,7 +39,7 @@ export function drawCurveFromCoordPath(context: CanvasRenderingContext2D,
                                        coordPath: [Coord[], number],
                                        smoothness: number, thinning: number = 0) {
     context.beginPath();
-    context.strokeStyle = 'black'; // TODO: Move out of this method
+    // context.strokeStyle = 'black'; // TODO: Move out of this method
     context.lineWidth = coordPath[1] - thinning;
     let i;
     const num_coords = coordPath[0].length;
@@ -92,12 +92,18 @@ export function undo(context: CanvasRenderingContext2D,
     if (stackSize > 0)
         undrawCurveFromCoordPath(context, coordPathStack.pop(), smoothness, -1);
 
-    stackSize = coordPathStack.length;
-    if (stackSize > 0)
-        drawCurveFromCoordPath(
-            context,
-            coordPathStack[stackSize - 1],
-            smoothness, thinning
-        );
+    // Need to store stroke style for each stroke, otherwise this paints over a
+    // previous stroke with the current color.
+    // stackSize = coordPathStack.length;
+    // if (stackSize > 0)
+    //     drawCurveFromCoordPath(
+    //         context,
+    //         coordPathStack[stackSize - 1],
+    //         smoothness, thinning
+    //     );
 }
 
+export function setColor(context: CanvasRenderingContext2D,
+                         color: string) {
+    context.strokeStyle = color;
+}

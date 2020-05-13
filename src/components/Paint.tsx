@@ -5,8 +5,11 @@ import {
     drawLine,
     drawLineFromCoordPath, drawCurveFromCoordPath,
     undrawLineFromCoordPath, undrawCurveFromCoordPath,
-    undo
+    undo, setColor
 } from '../utils/PaintUtils';
+import './styles/Paint.scss';
+
+import UndoImg from '../assets/icons/undo-black-18dp.svg';
 
 function Paint(props: PaintProps) {
     const canvasRef = useRef(null);
@@ -26,12 +29,13 @@ function Paint(props: PaintProps) {
     // TODO: Move <canvas> event handlers into separate functions. All those
     //       .currents are ugly :'(
     return (
-        <div style={{'verticalAlign': 'top', 'display': 'inline-block'}}>
+        <div
+            style={{'width': '100%', 'height': '100%', 'display': 'inline-block', 'textAlign': 'center'}}>
             <canvas
                 width={props.width}
                 height={props.height}
                 ref={canvasRef}
-                style={{border: '1px solid black'}}
+                id='paint-canvas'
                 onMouseDown = {e => {
                     // Only proceed if the left mouse is pressed
                     if (e.button != 0) return;
@@ -94,8 +98,43 @@ function Paint(props: PaintProps) {
                 onClick = {_ => {
                     const context = canvasRef.current.getContext('2d');
                     undo(context, coordPathStack.current, props.smoothness);
-                }}>
-                Undo
+                }}
+                className='side-btn'
+                id='undo-btn'>
+                <img src={UndoImg} style={{'width':'30px', 'height':'30px'}}/>
+            </button>
+            <br />
+            <button
+                onClick = {_ => {
+                    const context = canvasRef.current.getContext('2d');
+                    setColor(context, 'black');
+                }}
+                className='side-btn color-btn'
+                id='blk-btn'>
+            </button>
+            <button
+                onClick = {_ => {
+                    const context = canvasRef.current.getContext('2d');
+                    setColor(context, 'red');
+                }}
+                className='side-btn color-btn'
+                id='red-btn'>
+            </button>
+            <button
+                onClick = {_ => {
+                    const context = canvasRef.current.getContext('2d');
+                    setColor(context, 'green');
+                }}
+                className='side-btn color-btn'
+                id='green-btn'>
+            </button>
+            <button
+                onClick = {_ => {
+                    const context = canvasRef.current.getContext('2d');
+                    setColor(context, 'blue');
+                }}
+                className='side-btn color-btn'
+                id='blue-btn'>
             </button>
         </div>
     )
