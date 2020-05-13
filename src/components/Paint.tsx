@@ -46,7 +46,6 @@ function Paint(props: PaintProps) {
         // TODO: Renormalize coordinates for canvas dimensions if necessary
         drawAllCurvesFromStack(context, coordPathStack.current,
                                props.smoothness, props.thinning);
-        console.log('redrawing');
     });
 
     // TODO: Move <canvas> event handlers into separate functions. All those
