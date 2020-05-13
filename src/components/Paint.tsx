@@ -1,11 +1,11 @@
 import React, { useRef } from 'react';
 
 import {
-    PaintProps, Coord,
+    PaintProps, Coord, CoordPath,
     drawLine,
     drawLineFromCoordPath, drawCurveFromCoordPath,
     undrawLineFromCoordPath, undrawCurveFromCoordPath,
-    undo, setColor
+    undo
 } from '../utils/PaintUtils';
 import './styles/Paint.scss';
 
@@ -21,10 +21,12 @@ function Paint(props: PaintProps) {
     // A tuple of a list of mouse positions and a number to represent the width
     // of the line being drawn.
     const currentCoordPath:
-        React.MutableRefObject<[Coord[], number]> = useRef([[], props.lineWidth]);
+        React.MutableRefObject<CoordPath> = useRef({
+            pos: [], width: props.lineWidth, color: 'black'
+        });
     // A stack of mouse position lists, which track the path taken by the mouse
     const coordPathStack:
-        React.MutableRefObject<[Coord[], number][]> = useRef([]);
+        React.MutableRefObject<CoordPath[]> = useRef([]);
 
     // TODO: Move <canvas> event handlers into separate functions. All those
     //       .currents are ugly :'(
@@ -47,7 +49,7 @@ function Paint(props: PaintProps) {
                     mousePos.current = { x: e.clientX - bounds.left, 
                                          y: e.clientY - bounds.top };
                     isDrawing.current = true;
-                    currentCoordPath.current[0] = [ mousePos.current ];
+                    currentCoordPath.current.pos = [ mousePos.current ];
                 }}
                 onMouseUp = {e => {
                     // Only proceed if the left mouse is pressed
@@ -56,7 +58,7 @@ function Paint(props: PaintProps) {
                     mousePos.current = { x: 0, y: 0 };
                     isDrawing.current = false;
 
-                    if (currentCoordPath.current[0].length == 0) return;
+                    if (currentCoordPath.current.pos.length == 0) return;
 
                     // Erase the drawn line and redraw a curve approximation.
                     const context: CanvasRenderingContext2D = canvasRef.current.getContext('2d');
@@ -69,12 +71,14 @@ function Paint(props: PaintProps) {
                     // Weird quirk: this doesn't work:
                     // coordPathStack.current.push(currentCoordPath.current);
                     // But this does:
-                    coordPathStack.current.push([currentCoordPath.current[0], currentCoordPath.current[1]]);
-                    // Chrome prints to the console asynchronously,
-                    // so it might just be an effect of that.
+                    coordPathStack.current.push({
+                        pos: currentCoordPath.current.pos,
+                        width: currentCoordPath.current.width,
+                        color: currentCoordPath.current.color
+                    });
 
                     // Reset the path
-                    currentCoordPath.current[0] = []
+                    currentCoordPath.current.pos = []
                 }}
                 onMouseMove = {e => {
                     // Only proceed if the left mouse is pressed
@@ -89,7 +93,7 @@ function Paint(props: PaintProps) {
                                              y: e.clientY - bounds.top };
                         drawLine(context, mousePos.current, end, props.lineWidth);
 
-                        currentCoordPath.current[0].push(end);
+                        currentCoordPath.current.pos.push(end);
                         mousePos.current = end;
                     }
                 }}>
@@ -106,32 +110,36 @@ function Paint(props: PaintProps) {
             <br />
             <button
                 onClick = {_ => {
-                    const context = canvasRef.current.getContext('2d');
-                    setColor(context, 'black');
+                    const context: CanvasRenderingContext2D = canvasRef.current.getContext('2d');
+                    context.strokeStyle = 'black';
+                    currentCoordPath.current.color = 'black';
                 }}
                 className='side-btn color-btn'
                 id='blk-btn'>
             </button>
             <button
                 onClick = {_ => {
-                    const context = canvasRef.current.getContext('2d');
-                    setColor(context, 'red');
+                    const context: CanvasRenderingContext2D = canvasRef.current.getContext('2d');
+                    context.strokeStyle = 'red';
+                    currentCoordPath.current.color = 'red';
                 }}
                 className='side-btn color-btn'
                 id='red-btn'>
             </button>
             <button
                 onClick = {_ => {
-                    const context = canvasRef.current.getContext('2d');
-                    setColor(context, 'green');
+                    const context: CanvasRenderingContext2D = canvasRef.current.getContext('2d');
+                    context.strokeStyle = 'green';
+                    currentCoordPath.current.color = 'green';
                 }}
                 className='side-btn color-btn'
                 id='green-btn'>
             </button>
             <button
                 onClick = {_ => {
-                    const context = canvasRef.current.getContext('2d');
-                    setColor(context, 'blue');
+                    const context: CanvasRenderingContext2D = canvasRef.current.getContext('2d');
+                    context.strokeStyle = 'blue';
+                    currentCoordPath.current.color = 'blue';
                 }}
                 className='side-btn color-btn'
                 id='blue-btn'>
