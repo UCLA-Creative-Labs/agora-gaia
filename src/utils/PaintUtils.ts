@@ -36,8 +36,8 @@ export function drawLineFromCoordPath(context: CanvasRenderingContext2D,
 }
 
 export function drawCurveFromCoordPath(context: CanvasRenderingContext2D,
-                                coordPath: [Coord[], number],
-                                smoothness: number, thinning: number = 0) {
+                                       coordPath: [Coord[], number],
+                                       smoothness: number, thinning: number = 0) {
     context.beginPath();
     context.strokeStyle = 'black'; // TODO: Move out of this method
     context.lineWidth = coordPath[1] - thinning;
@@ -58,8 +58,8 @@ export function drawCurveFromCoordPath(context: CanvasRenderingContext2D,
     context.closePath();
 }
 
-export function undrawFromCoordPath(context: CanvasRenderingContext2D,
-                             coordPath: [Coord[], number]) {
+export function undrawLineFromCoordPath(context: CanvasRenderingContext2D,
+                                        coordPath: [Coord[], number]) {
     // Save state of context so we can revert with no difficulties
     context.save();
     // This flag makes sure whatever is drawn is destructive
@@ -71,8 +71,33 @@ export function undrawFromCoordPath(context: CanvasRenderingContext2D,
     context.restore();
 }
 
+export function undrawCurveFromCoordPath(context: CanvasRenderingContext2D,
+                                         coordPath: [Coord[], number],
+                                         smoothness: number, thinning: number = 0) {
+    // Save state of context so we can revert with no difficulties
+    context.save();
+    // This flag makes sure whatever is drawn is destructive
+    context.globalCompositeOperation = "destination-out";
+    // Expand the line with a tad to make sure there's no residue
+    context.lineWidth = coordPath[1] + 1;
+    drawCurveFromCoordPath(context, coordPath, smoothness, thinning);
+    // Restore the previous state of the context
+    context.restore();
+}
+
 export function undo(context: CanvasRenderingContext2D,
-              coordPathStack: [Coord[], number][]) {
-    undrawFromCoordPath(context, coordPathStack.pop());
+                     coordPathStack: [Coord[], number][],
+                     smoothness: number, thinning: number = 0) {
+    let stackSize = coordPathStack.length;
+    if (stackSize > 0)
+        undrawCurveFromCoordPath(context, coordPathStack.pop(), smoothness, -1);
+
+    stackSize = coordPathStack.length;
+    if (stackSize > 0)
+        drawCurveFromCoordPath(
+            context,
+            coordPathStack[stackSize - 1],
+            smoothness, thinning
+        );
 }
 
