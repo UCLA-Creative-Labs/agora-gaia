@@ -89,6 +89,14 @@ export function undrawCurveFromCoordPath(context: CanvasRenderingContext2D,
     context.restore();
 }
 
+export function drawAllCurvesFromStack(context: CanvasRenderingContext2D,
+                                       coordPathStack: CoordPath[],
+                                       smoothness: number, thinning: number = 0) {
+    coordPathStack.forEach(coordPath => {
+        drawCurveFromCoordPath(context, coordPath, smoothness, thinning);
+    });
+}
+
 export function undo(context: CanvasRenderingContext2D,
                      coordPathStack: CoordPath[],
                      smoothness: number, thinning: number = 0) {

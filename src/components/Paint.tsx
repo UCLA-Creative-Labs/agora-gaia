@@ -1,10 +1,11 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 
 import {
     PaintProps, CoordPath,
     drawLine,
     drawLineFromCoordPath, drawCurveFromCoordPath,
     undrawLineFromCoordPath, undrawCurveFromCoordPath,
+    drawAllCurvesFromStack,
     undo
 } from '../utils/PaintUtils';
 import {
@@ -36,7 +37,17 @@ function Paint(props: PaintProps) {
     const coordPathStack:
         React.MutableRefObject<CoordPath[]> = useRef([]);
 
+    // If the element doesn't have a colors property, default to black + RGB
     const colors: string[] = props.colors || [ 'black', 'red', 'green', 'blue' ]
+
+    useEffect(() => {
+        const context = canvasRef.current.getContext('2d');
+
+        // TODO: Renormalize coordinates for canvas dimensions if necessary
+        drawAllCurvesFromStack(context, coordPathStack.current,
+                               props.smoothness, props.thinning);
+        console.log('redrawing');
+    });
 
     // TODO: Move <canvas> event handlers into separate functions. All those
     //       .currents are ugly :'(

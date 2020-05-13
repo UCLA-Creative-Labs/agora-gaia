@@ -85,3 +85,14 @@ button {
     position: relative;
     margin-right: 0px;
 }
+
+.color-btn:hover {
+    transform: scale(1.1);
+    filter: drop-shadow(0px 2px 5px rgba(0,0,0,0.4));
+}
+
+.color-btn:active {
+    transform: scale(0.9);
+    filter: drop-shadow(0px 2px 1px rgba(0,0,0,0.4));
+}
+
