@@ -110,7 +110,7 @@ function Paint(props: PaintProps) {
 
                         if (props.maxStrokeLen && coordPathLen.current >= props.maxStrokeLen) {
                             canvas.dispatchEvent(new MouseEvent('mouseup', {
-                                bubbles: true, cancelable: true, view: window
+                                bubbles: true, cancelable: true
                             }));
                         }
 
@@ -119,7 +119,7 @@ function Paint(props: PaintProps) {
                 }}
                 onMouseLeave = {e => {
                     canvasRef.current.dispatchEvent(new MouseEvent('mouseup', {
-                        bubbles: true, cancelable: true, view: window
+                        bubbles: true, cancelable: true
                     }));
                 }}>
             </canvas>
