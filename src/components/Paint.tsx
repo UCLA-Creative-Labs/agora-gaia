@@ -39,8 +39,7 @@ function Paint(props: PaintProps) {
     // TODO: Move <canvas> event handlers into separate functions. All those
     //       .currents are ugly :'(
     return (
-        <div
-            style={{'width': '100%', 'height': '100%', 'display': 'inline-block', 'textAlign': 'center'}}>
+        <div id='canvas-wrapper'>
             <canvas
                 width={props.width}
                 height={props.height}
@@ -73,10 +72,12 @@ function Paint(props: PaintProps) {
                     // Erase the drawn line and redraw a curve approximation.
                     const context = canvasRef.current.getContext('2d');
                     undrawLineFromCoordPath(context, currentCoordPath.current);
-                    // Uncomment this and comment drawCurveFromCoordPath to redraw the exact line drawn by the user.
+                    // Uncomment this and comment drawCurveFromCoordPath to redraw the exact
+                    // line drawn by the user.
                     // (Note: this is still apparently un-antialiased for some reason :( )
                     // drawLineFromCoordPath(context, currentCoordPath.current);
-                    drawCurveFromCoordPath(context, currentCoordPath.current, props.smoothness, props.thinning);
+                    drawCurveFromCoordPath(context, currentCoordPath.current,
+                                           props.smoothness, props.thinning);
 
                     // Weird quirk: this doesn't work:
                     // coordPathStack.current.push(currentCoordPath.current);
