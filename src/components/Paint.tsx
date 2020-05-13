@@ -123,6 +123,7 @@ function Paint(props: PaintProps) {
                         bubbles: true, cancelable: true
                     }));
                 }}>
+                {'Your browser doesn\'t support <canvas> elements :('}
             </canvas>
             <button
                 onClick = {_ => {
