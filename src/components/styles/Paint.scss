@@ -37,10 +37,12 @@ button:focus {
 }
 
 .side-btn:hover {
-    filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.4));
+    transform: scale(1.1);
+    filter: drop-shadow(0px 2px 5px rgba(0,0,0,0.4));
 }
 
 .side-btn:active {
+    transform: scale(0.9);
     filter: drop-shadow(0px 2px 1px rgba(0,0,0,0.4));
 }
 
@@ -48,29 +50,3 @@ button:focus {
     position: relative;
     margin-right: 0px;
 }
-
-.color-btn:hover {
-    filter: drop-shadow(0px 2px 6px rgba(0,0,0,0.4));
-}
-
-.color-btn:active {
-    filter: drop-shadow(0px 2px 1px rgba(0,0,0,0.4));
-}
-
-/*
-#blk-btn {
-    background: black;
-}
-
-#red-btn {
-    background: red;
-}
-
-#blue-btn {
-    background: blue;
-}
-
-#green-btn {
-    background: green;
-}
-*/
