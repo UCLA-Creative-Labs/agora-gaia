@@ -15,3 +15,4 @@ Run `yarn install` to install all dependencies.
 * Doesn't support touchscreens yet.
 * Undrawing and redrawing is faster than redrawing the whole canvas every stroke, but it leaves little gaps in previous strokes. This is avoided if smoothing is 1.
 * If the mouse is pressed inside the canvas, dragged outside the canvas, and released, then the canvas doesn't register the mouseUp and so doesn't add that stroke to the stack.
+* Limiting the stroke length produces residue for faster strokes.
