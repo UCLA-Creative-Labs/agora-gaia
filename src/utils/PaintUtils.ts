@@ -3,7 +3,8 @@ export interface PaintProps {
     width: number, height: number,
     lineWidth: number,
     smoothness: number,
-    thinning?: number // Optional
+    thinning?: number, // Optional
+    colors?: string[] // Optional
 }
 
 // Interface to avoid having to type { x: number, y: number } everywhere.
@@ -94,9 +95,9 @@ export function undo(context: CanvasRenderingContext2D,
                      coordPathStack: CoordPath[],
                      smoothness: number, thinning: number = 0) {
     let stackSize = coordPathStack.length;
-    console.log(coordPathStack[stackSize - 1]);
-    if (stackSize > 0)
-        undrawCurveFromCoordPath(context, coordPathStack.pop(), smoothness, -1);
+    if (stackSize <= 0) return;
+
+    undrawCurveFromCoordPath(context, coordPathStack.pop(), smoothness, -1);
 
     stackSize = coordPathStack.length;
     if (stackSize > 0)

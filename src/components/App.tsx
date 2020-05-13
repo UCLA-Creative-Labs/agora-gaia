@@ -13,6 +13,12 @@ function App() {
                 lineWidth={2}
                 smoothness={2}
                 thinning={0.3}
+                colors={[
+                    'black',
+                    'red', 'orange', 'yellow',
+                    'green',
+                    'blue', 'indigo', 'violet'
+                ]}
             />
         </div>
     );

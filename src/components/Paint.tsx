@@ -28,6 +28,8 @@ function Paint(props: PaintProps) {
     const coordPathStack:
         React.MutableRefObject<CoordPath[]> = useRef([]);
 
+    const colors = props.colors || [ 'black', 'red', 'green', 'blue' ]
+
     // TODO: Move <canvas> event handlers into separate functions. All those
     //       .currents are ugly :'(
     return (
@@ -102,48 +104,27 @@ function Paint(props: PaintProps) {
                 onClick = {_ => {
                     const context = canvasRef.current.getContext('2d');
                     undo(context, coordPathStack.current, props.smoothness);
+                    context.strokeStyle = currentCoordPath.current.color;
+                    context.lineWidth = currentCoordPath.current.width;
                 }}
                 className='side-btn'
                 id='undo-btn'>
                 <img src={UndoImg} style={{'width':'30px', 'height':'30px'}}/>
             </button>
             <br />
-            <button
-                onClick = {_ => {
-                    const context: CanvasRenderingContext2D = canvasRef.current.getContext('2d');
-                    context.strokeStyle = 'black';
-                    currentCoordPath.current.color = 'black';
-                }}
-                className='side-btn color-btn'
-                id='blk-btn'>
-            </button>
-            <button
-                onClick = {_ => {
-                    const context: CanvasRenderingContext2D = canvasRef.current.getContext('2d');
-                    context.strokeStyle = 'red';
-                    currentCoordPath.current.color = 'red';
-                }}
-                className='side-btn color-btn'
-                id='red-btn'>
-            </button>
-            <button
-                onClick = {_ => {
-                    const context: CanvasRenderingContext2D = canvasRef.current.getContext('2d');
-                    context.strokeStyle = 'green';
-                    currentCoordPath.current.color = 'green';
-                }}
-                className='side-btn color-btn'
-                id='green-btn'>
-            </button>
-            <button
-                onClick = {_ => {
-                    const context: CanvasRenderingContext2D = canvasRef.current.getContext('2d');
-                    context.strokeStyle = 'blue';
-                    currentCoordPath.current.color = 'blue';
-                }}
-                className='side-btn color-btn'
-                id='blue-btn'>
-            </button>
+            {colors.map(color => {
+                return (
+                    <button
+                        key = {color+'-btn'}
+                        onClick = {_ => {
+                            const context: CanvasRenderingContext2D = canvasRef.current.getContext('2d');
+                            context.strokeStyle = color;
+                            currentCoordPath.current.color = color;
+                        }}
+                        className = 'side-btn color-btn'
+                        style = {{ 'background': color }}/>
+                );
+            })}
         </div>
     )
 }
