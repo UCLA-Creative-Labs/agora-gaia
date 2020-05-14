@@ -10,7 +10,8 @@ Run `yarn install` to install all dependencies.
 
 ## To-Do
 
-* Zooming and/or panning
+* Add zooming and/or panning.
+* Note: Right now, I'm using `useRef` for everything related to the canvas (current path, path stack, etc.), because I figured using `useState` and `useEffect` would make the canvas re-render on every update, like drawing a new stroke, changing stroke width, etc., which seems inefficient especially if we want to make sure this scales well. But `useState` and `useEffect` are more idiomatic React and would allow us to update stuff on the DOM (like a `<p>` tag with tracking the stroke width), so will need to look into this more.
 
 ## Known bugs
 
