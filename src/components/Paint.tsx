@@ -53,6 +53,26 @@ function Paint(props: PaintProps) {
     return (
         <div id='all-wrapper'>
             <div id='canvas-wrapper'>
+                <span id='draw-controls'>
+                    <button
+                        onClick = {_ => {
+                            if (currentCoordPath.current.width <= 12)
+                                currentCoordPath.current.width += 1;
+                        }}
+                        className='side-btn'
+                        id='zoomin-btn'>
+                        <img src={ZoomInImg} style={{'width':'30px', 'height':'30px'}}/>
+                    </button>
+                    <button
+                        onClick = {_ => {
+                            if (currentCoordPath.current.width > 1)
+                                currentCoordPath.current.width -= 1;
+                        }}
+                        className='side-btn'
+                        id='zoomout-btn'>
+                        <img src={ZoomOutImg} style={{'width':'30px', 'height':'30px'}}/>
+                    </button>
+                </span>
                 <canvas
                     width={props.width}
                     height={props.height}
@@ -60,7 +80,7 @@ function Paint(props: PaintProps) {
                     id='paint-canvas'
                     onMouseDown = {e => {
                         // Only proceed if the left mouse is pressed
-                        if (e.button != 0) return;
+                        if (e.button != 0 || props.cannotDraw) return;
 
                         const canvas = canvasRef.current;
                         const bounds = canvas.getBoundingClientRect();
@@ -74,7 +94,7 @@ function Paint(props: PaintProps) {
                     }}
                     onMouseUp = {e => {
                         // Only proceed if the left mouse is pressed and isDrawing
-                        if (e.button != 0 || !isDrawing) return;
+                        if (e.button != 0 || !isDrawing || props.cannotDraw) return;
 
                         mousePos.current = { x: 0, y: 0 };
                         isDrawing.current = false;
@@ -112,7 +132,7 @@ function Paint(props: PaintProps) {
                     }}
                     onMouseMove = {e => {
                         // Only proceed if the left mouse is pressed
-                        if (e.button != 0 || !isDrawing) return;
+                        if (e.button != 0 || !isDrawing || props.cannotDraw) return;
 
                         const canvas = canvasRef.current;
                         const context = canvas.getContext('2d');
@@ -160,24 +180,6 @@ function Paint(props: PaintProps) {
                         className='side-btn'
                         id='undo-btn'>
                         <img src={UndoImg} style={{'width':'30px', 'height':'30px'}}/>
-                    </button>
-                    <button
-                        onClick = {_ => {
-                            // TODO
-                            console.log('zoom in');
-                        }}
-                        className='side-btn'
-                        id='zoomin-btn'>
-                        <img src={ZoomInImg} style={{'width':'30px', 'height':'30px'}}/>
-                    </button>
-                    <button
-                        onClick = {_ => {
-                            // TODO
-                            console.log('zoom out');
-                        }}
-                        className='side-btn'
-                        id='zoomout-btn'>
-                        <img src={ZoomOutImg} style={{'width':'30px', 'height':'30px'}}/>
                     </button>
                 </span>
             </div>

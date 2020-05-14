@@ -12,6 +12,9 @@ export interface PaintProps {
     colors?: string[],      // Optional (null must be explicitly handled)
     maxStrokeLen?: number,  // Optional (null treated as infinite)
 
+    // For use with server to prevent user from drawing.
+    cannotDraw?: boolean,
+
     // If enabled, the canvas will redraw all previous strokes when drawing
     // a new one. This is expensive (especially as the stack size grows very
     // large) so enable sparingly.
