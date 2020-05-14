@@ -19,6 +19,8 @@ import ZoomInImg from '../assets/icons/add-black-18dp.svg';
 import ZoomOutImg from '../assets/icons/remove-black-18dp.svg';
 
 function Paint(props: PaintProps) {
+    // Note: can't use useState or useEffect because <canvas> doesn't keep re-rendering
+    //       like other elements.
     const canvasRef: React.MutableRefObject<HTMLCanvasElement> = useRef(null);
     const isDrawing: React.MutableRefObject<boolean> = useRef(false);
 
@@ -50,6 +52,7 @@ function Paint(props: PaintProps) {
 
     // TODO: Move <canvas> event handlers into separate functions. All those
     //       .currents are ugly :'(
+    // TODO: Move buttons into separate components. As it stands this is too cluttered.
     return (
         <div id='all-wrapper'>
             <div id='canvas-wrapper'>
