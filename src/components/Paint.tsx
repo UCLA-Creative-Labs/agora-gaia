@@ -190,7 +190,7 @@ function Paint(props: PaintProps) {
                     </button>
                     <button
                         onClick = {_ => {
-                            console.log(callApi())
+                            callApi().then(body => body.map((message: { [x: string]: any; }) => console.log("Message #" + message['id'] + " from " + message['name'])));
                         }}
                         className='side-btn'>
                         <b>API</b>
