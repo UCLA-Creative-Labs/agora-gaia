@@ -4,10 +4,18 @@ import { Coord, distance } from './MathUtils';
 export interface PaintProps {
     width: number, height: number,
     lineWidth: number,
+
+    // Line smoothing/thinning is a global property, not user defined, so
+    // they are handled at the canvas level, not the stroke level
     smoothness: number,
-    thinning?: number,      // Optional
-    colors?: string[],      // Optional
-    maxStrokeLen?: number   // Optional
+    thinning?: number,      // Optional (null treated as 0)
+    colors?: string[],      // Optional (null must be explicitly handled)
+    maxStrokeLen?: number,  // Optional (null treated as infinite)
+
+    // If enabled, the canvas will redraw all previous strokes when drawing
+    // a new one. This is expensive (especially as the stack size grows very
+    // large) so enable sparingly.
+    rerenderAll?: boolean   // Optional (null treated as false)
 }
 
 export interface CoordPath {
@@ -43,7 +51,6 @@ export function drawCurveFromCoordPath(context: CanvasRenderingContext2D,
                                        coordPath: CoordPath,
                                        smoothness: number, thinning: number = 0) {
     context.beginPath();
-    // context.strokeStyle = 'black'; // TODO: Move out of this method
     context.strokeStyle = coordPath.color;
     context.lineWidth = coordPath.width - thinning;
     let i;
@@ -97,19 +104,29 @@ export function drawAllCurvesFromStack(context: CanvasRenderingContext2D,
     });
 }
 
-export function undo(context: CanvasRenderingContext2D,
+export function undo(canvas: HTMLCanvasElement,
                      coordPathStack: CoordPath[],
+                     rerenderAll: boolean,
                      smoothness: number, thinning: number = 0) {
     let stackSize = coordPathStack.length;
     if (stackSize <= 0) return;
 
-    undrawCurveFromCoordPath(context, coordPathStack.pop(), smoothness, -1);
+    const context = canvas.getContext('2d');
 
-    stackSize = coordPathStack.length;
-    if (stackSize > 0)
-        drawCurveFromCoordPath(
-            context,
-            coordPathStack[stackSize - 1],
-            smoothness, thinning
-        );
+    if (rerenderAll) {
+        coordPathStack.pop();
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        drawAllCurvesFromStack(context, coordPathStack,
+                               smoothness, thinning);
+    } else {
+        undrawCurveFromCoordPath(context, coordPathStack.pop(),
+                                 smoothness, -1);
+        stackSize = coordPathStack.length;
+        if (stackSize > 0)
+            drawCurveFromCoordPath(
+                context,
+                coordPathStack[stackSize - 1],
+                smoothness, thinning
+            );
+    }
 }

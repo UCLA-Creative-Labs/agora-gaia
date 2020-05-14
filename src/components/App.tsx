@@ -28,6 +28,7 @@ function App() {
                     'blue', 'indigo', 'violet'
                 ]}
                 maxStrokeLen={0}
+                rerenderAll={false} // Warning: slows down fast when true
             />
         </div>
     );

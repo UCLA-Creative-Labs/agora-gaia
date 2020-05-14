@@ -83,7 +83,14 @@ function Paint(props: PaintProps) {
 
                         // Erase the drawn line and redraw a curve approximation.
                         const context = canvasRef.current.getContext('2d');
-                        undrawLineFromCoordPath(context, currentCoordPath.current);
+
+                        // Rerendering the whole stack is expensive, so do this only if explicitly directed.
+                        if (props.rerenderAll) {
+                            context.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+                            drawAllCurvesFromStack(context, coordPathStack.current, props.smoothness, props.thinning);
+                        } else {
+                            undrawLineFromCoordPath(context, currentCoordPath.current);
+                        }
                         // Uncomment this and comment drawCurveFromCoordPath to redraw the exact
                         // line drawn by the user.
                         // (Note: this is still apparently un-antialiased for some reason :( )
@@ -116,7 +123,7 @@ function Paint(props: PaintProps) {
                         if (isDrawing.current) {
                             const end: Coord = { x: e.clientX - bounds.left,
                                                  y: e.clientY - bounds.top };
-                            drawLine(context, mousePos.current, end, props.lineWidth);
+                            drawLine(context, mousePos.current, end, currentCoordPath.current.width);
 
                             currentCoordPath.current.pos.push(end);
                             coordPathLen.current += distance(mousePos.current, end);
@@ -145,7 +152,8 @@ function Paint(props: PaintProps) {
                     <button
                         onClick = {_ => {
                             const context = canvasRef.current.getContext('2d');
-                            undo(context, coordPathStack.current, props.smoothness);
+                            undo(canvasRef.current, coordPathStack.current,
+                                 props.rerenderAll, props.smoothness);
                             context.strokeStyle = currentCoordPath.current.color;
                             context.lineWidth = currentCoordPath.current.width;
                         }}
