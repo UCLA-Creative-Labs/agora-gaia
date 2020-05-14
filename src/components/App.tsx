@@ -8,8 +8,6 @@ import './styles/App.scss';
 
 function App() {
     const size = useWindowSize();
-    console.log(size);
-
     const canvasWidth = 0.8 * size.width;
     const canvasHeight = 0.85 * size.height;
 
