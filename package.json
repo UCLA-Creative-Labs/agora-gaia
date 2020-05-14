@@ -43,6 +43,5 @@
     "webpack-cli": "^3.3.11",
     "webpack-dev-server": "^3.10.3",
     "webpack-merge": "^4.2.2"
-  },
-  "proxy": "http://129.146.146.29:3000/"
+  }
 }

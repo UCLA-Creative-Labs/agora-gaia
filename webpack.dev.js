@@ -32,6 +32,13 @@ module.exports = merge(common, {
     devtool: 'inline-source-map',
     devServer: {
         contentBase: './dist',
-        hot: true
+        hot: true,
+        port: 8000,
+        proxy: {
+            '/api': {
+                target: "http://localhost:3000",
+                pathRewrite: {'^/api': ''}
+            }
+        }
     }
 });
