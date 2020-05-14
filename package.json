@@ -3,15 +3,12 @@
   "scripts": {
     "start": "webpack-dev-server --open --config webpack.dev.js",
     "build": "webpack --config webpack.prod.js",
-    "server": "cd server && nodemon index.js",
-    "dev": "concurrently --kill-others-on-fail \"yarn server\" \"yarn start\""
+    "server": "cd src/server && nodemon index.js",
+    "dev": "concurrently -k \"yarn server\" \"yarn start --host=0.0.0.0\""
   },
   "dependencies": {
     "@types/react": "^16.9.35",
     "@types/react-dom": "^16.9.8",
-    "concurrently": "^5.2.0",
-    "nodemon": "^2.0.3",
-    "pg": "^8.2.0",
     "react": "^16.13.1",
     "react-dom": "^16.13.1"
   },
@@ -28,11 +25,15 @@
     "babel-preset-stage-0": "^6.24.1",
     "babel-register": "^6.26.0",
     "clean-webpack-plugin": "^3.0.0",
+    "concurrently": "^5.2.0",
     "css-loader": "^3.5.2",
     "express": "^4.17.1",
     "file-loader": "^6.0.0",
     "html-webpack-plugin": "^4.2.0",
     "mini-css-extract-plugin": "^0.9.0",
+    "nodemon": "^2.0.3",
+    "pg": "^8.2.0",
+    "pg-native": "^3.0.0",
     "sass": "^1.26.3",
     "sass-loader": "^8.0.2",
     "style-loader": "^1.1.3",
