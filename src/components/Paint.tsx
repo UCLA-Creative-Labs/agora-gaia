@@ -188,13 +188,12 @@ function Paint(props: PaintProps) {
                         id='undo-btn'>
                         <img src={UndoImg} style={{'width':'30px', 'height':'30px'}}/>
                     </button>
-                </span>
-                <span id='draw-controls'>
                     <button
                         onClick = {_ => {
                             console.log(callApi())
                         }}
                         className='side-btn'>
+                        <b>API</b>
                     </button>
                 </span>
             </div>
