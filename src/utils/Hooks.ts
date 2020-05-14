@@ -27,3 +27,11 @@ export function useWindowSize() {
 
   return windowSize;
 }
+
+export async function callApi(){
+  const response = await fetch('http://129.146.146.29:3000/users');
+  const body = await response.json();
+  if (response.status !== 200) throw Error(body.message);
+  console.log(body)
+  return body;
+};

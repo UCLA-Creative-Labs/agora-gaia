@@ -2,11 +2,16 @@
   "private": true,
   "scripts": {
     "start": "webpack-dev-server --open --config webpack.dev.js",
-    "build": "webpack --config webpack.prod.js"
+    "build": "webpack --config webpack.prod.js",
+    "server": "cd server && nodemon index.js",
+    "dev": "concurrently --kill-others-on-fail \"yarn server\" \"yarn start\""
   },
   "dependencies": {
     "@types/react": "^16.9.35",
     "@types/react-dom": "^16.9.8",
+    "concurrently": "^5.2.0",
+    "nodemon": "^2.0.3",
+    "pg": "^8.2.0",
     "react": "^16.13.1",
     "react-dom": "^16.13.1"
   },
@@ -15,7 +20,12 @@
     "@babel/preset-env": "^7.9.5",
     "@babel/preset-react": "^7.9.4",
     "@babel/preset-typescript": "^7.9.0",
+    "babel-core": "^6.26.3",
     "babel-loader": "^8.1.0",
+    "babel-polyfill": "^6.26.0",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-preset-stage-0": "^6.24.1",
     "babel-register": "^6.26.0",
     "clean-webpack-plugin": "^3.0.0",
     "css-loader": "^3.5.2",
@@ -33,5 +43,6 @@
     "webpack-cli": "^3.3.11",
     "webpack-dev-server": "^3.10.3",
     "webpack-merge": "^4.2.2"
-  }
+  },
+  "proxy": "http://129.146.146.29:3000/"
 }

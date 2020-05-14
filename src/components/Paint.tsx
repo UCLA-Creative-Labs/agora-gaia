@@ -12,6 +12,10 @@ import {
     Coord, distance
 } from '../utils/MathUtils';
 
+import {
+    callApi,
+} from '../utils/Hooks';
+
 import './styles/Paint.scss';
 
 import UndoImg from '../assets/icons/undo-black-18dp.svg';
@@ -183,6 +187,14 @@ function Paint(props: PaintProps) {
                         className='side-btn'
                         id='undo-btn'>
                         <img src={UndoImg} style={{'width':'30px', 'height':'30px'}}/>
+                    </button>
+                </span>
+                <span id='draw-controls'>
+                    <button
+                        onClick = {_ => {
+                            console.log(callApi())
+                        }}
+                        className='side-btn'>
                     </button>
                 </span>
             </div>
