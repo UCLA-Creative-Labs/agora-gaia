@@ -28,9 +28,21 @@ export function useWindowSize() {
   return windowSize;
 }
 
-export async function callApi(){
-  const response = await fetch('/api/users');
+export async function getData(){
+  const response = await fetch('/api/data');
   const body = await response.json();
   if (response.status !== 200) throw Error(body.message);
+  return body;
+};
+
+export async function postData(data){
+  const response = await fetch('/api/data', {
+    method: 'POST',
+    body: data,
+    headers: {'content-type': 'application/json', 'Accept-Charset': 'UTF-8'},
+  });
+  const body = await response;
+  console.log(body)
+  if (!response.ok) throw Error(body.message);
   return body;
 };

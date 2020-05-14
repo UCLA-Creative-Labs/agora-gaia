@@ -13,7 +13,8 @@ import {
 } from '../utils/MathUtils';
 
 import {
-    callApi,
+    getData,
+    postData,
 } from '../utils/Hooks';
 
 import './styles/Paint.scss';
@@ -190,10 +191,28 @@ function Paint(props: PaintProps) {
                     </button>
                     <button
                         onClick = {_ => {
-                            callApi().then(body => body.map((message: { [x: string]: any; }) => console.log("Message #" + message['id'] + " from " + message['name'])));
+                            console.log(coordPathStack.current)
+                            const data = coordPathStack.current.slice(-1)[0];
+                            const json_data = JSON.stringify(coordPathStack.current.slice(-1)[0]);
+                            if(data && data.pos.length) {
+                                postData(json_data);
+                            }
                         }}
                         className='side-btn'>
-                        <b>API</b>
+                        <b>Post</b>
+                    </button>
+                    <button
+                        onClick = {_ => {
+                            getData().then(body => {
+                                console.log(body)
+                                coordPathStack.current = body;
+                                const context = canvasRef.current.getContext('2d');
+                                drawAllCurvesFromStack(context, coordPathStack.current,
+                                    props.smoothness, props.thinning);
+                            });
+                        }}
+                        className='side-btn'>
+                        <b>Get</b>
                     </button>
                 </span>
             </div>
