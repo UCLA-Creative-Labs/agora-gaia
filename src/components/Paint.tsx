@@ -17,7 +17,7 @@ import {
     postData,
 } from '../utils/Hooks';
 
-import io from 'socket.io-client';
+import socket from '../utils/SocketUtils';
 
 import './styles/Paint.scss';
 
@@ -49,8 +49,6 @@ function Paint(props: PaintProps) {
     // If the element doesn't have a colors property, default to black + RGB
     const colors: string[] = props.colors || [ 'black', 'red', 'green', 'blue' ]
 
-    var socket;
-
     useEffect(() => {
         const context = canvasRef.current.getContext('2d');
 
@@ -60,16 +58,14 @@ function Paint(props: PaintProps) {
     });
 
     useEffect(() => {
-        socket = io('http://129.146.146.29:3000/');
-
-        socket.on('package', function(data){
-            coordPathStack.current=data;
+        socket.on('package', function(data: CoordPath[]){
+            coordPathStack.current = data;
             const context = canvasRef.current.getContext('2d');
             drawAllCurvesFromStack(context, coordPathStack.current,
                 props.smoothness, props.thinning);
         });
 
-        socket.on('stroke', (data) => {
+        socket.on('stroke', (data: CoordPath) => {
             console.log("Another socket sent this: ")
             console.log(data)
             const context = canvasRef.current.getContext('2d');

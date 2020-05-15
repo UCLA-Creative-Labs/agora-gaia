@@ -38,6 +38,11 @@ module.exports = merge(common, {
             '/api': {
                 target: "http://localhost:3000",
                 pathRewrite: {'^/api': ''}
+            },
+            '/socket/*': {
+                target: "http://localhost:3000/socket.io",
+                pathRewrite: {'^/socket': ''},
+                ws: true
             }
         }
     }
