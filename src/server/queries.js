@@ -7,7 +7,7 @@ const pool = new Pool({
   port: 5432,
 })
 
-const getData = (request, response) => {
+const getData = (socket) => {
   pool.query('SELECT data FROM canvas_data ORDER BY time_stamp ASC', (error, results) => {
     if (error) {
       throw error
@@ -17,17 +17,15 @@ const getData = (request, response) => {
     for(let i = 0; i < results.rows.length; i++){
       res.push(results.rows[i].data)
     }
-    response.status(200).json(res)
+    socket.emit('package', res);
   })
 }
 
-const pushData = (request, response) => {
-  const data = request.body;
+const pushData = (data) => {
   pool.query('INSERT INTO canvas_data VALUES (now(), $1)',[data], (error, results) => {
     if (error) {
       throw error
     }
-    response.status(201).send("Succesfully added data");
   })
 }
 
