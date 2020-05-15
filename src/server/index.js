@@ -1,26 +1,32 @@
-const express = require('express')
-const bodyParser = require('body-parser')
-const app = express()
-const db = require('./queries')
-const port = 3000
+const express = require("express");
+const http = require("http");
+const socketIo = require("socket.io");
+const db = require('./queries.js')
 
-app.use(bodyParser.json())
-app.use(
-  bodyParser.urlencoded({
-    extended: true,
-  })
-)
+const port = 3000;
+const app = express();
 
-app.get('/', (request, response) => {
-  response.send({ info: 'Node.js, Express, and Postgres API' })
-})
+const server = http.createServer(app);
 
-app.get('/users', db.getUsers)
-app.get('/users/:id', db.getUserById)
-app.post('/users', db.createUser)
-app.put('/users/:id', db.updateUser)
-app.delete('/users/:id', db.deleteUser)
+const io = socketIo(server);
 
-app.listen(port, () => {
-  console.log(`App running on port ${port}.`)
-})
+var client_count = 0;
+
+io.on("connection", (socket) => {
+  client_count += 1;
+  console.log("New client connected. Current connection count: " + client_count);
+  db.getData(socket);
+  socket.on("update", (data) => {
+    console.log(data)
+    db.pushData(data);
+    socket.broadcast.emit('stroke', data);
+  });
+  socket.on("disconnect", () => {
+    client_count -= 1;
+    console.log("Client disconnected Current connection count: " + client_count);
+  });
+});
+
+
+server.listen(port, () => console.log(`Listening on port ${port}`));
+

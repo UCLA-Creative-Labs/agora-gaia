@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 import {
     PaintProps, CoordPath,
@@ -13,8 +13,11 @@ import {
 } from '../utils/MathUtils';
 
 import {
-    callApi,
+    getData,
+    postData,
 } from '../utils/Hooks';
+
+import io from 'socket.io-client';
 
 import './styles/Paint.scss';
 
@@ -46,6 +49,8 @@ function Paint(props: PaintProps) {
     // If the element doesn't have a colors property, default to black + RGB
     const colors: string[] = props.colors || [ 'black', 'red', 'green', 'blue' ]
 
+    var socket;
+
     useEffect(() => {
         const context = canvasRef.current.getContext('2d');
 
@@ -53,6 +58,31 @@ function Paint(props: PaintProps) {
         drawAllCurvesFromStack(context, coordPathStack.current,
                                props.smoothness, props.thinning);
     });
+
+    useEffect(() => {
+        socket = io('http://129.146.146.29:3000/');
+
+        socket.on('package', function(data){
+            coordPathStack.current=data;
+            const context = canvasRef.current.getContext('2d');
+            drawAllCurvesFromStack(context, coordPathStack.current,
+                props.smoothness, props.thinning);
+        });
+
+        socket.on('stroke', (data) => {
+            console.log("Another socket sent this: ")
+            console.log(data)
+            const context = canvasRef.current.getContext('2d');
+            coordPathStack.current.push({
+                pos: data.pos,
+                width: data.width,
+                color: data.color
+            });
+            drawCurveFromCoordPath(context, data,
+                props.smoothness, props.thinning);
+        });
+
+    }, []);
 
     // TODO: Move <canvas> event handlers into separate functions. All those
     //       .currents are ugly :'(
@@ -122,17 +152,19 @@ function Paint(props: PaintProps) {
                         // line drawn by the user.
                         // (Note: this is still apparently un-antialiased for some reason :( )
                         // drawLineFromCoordPath(context, currentCoordPath.current);
+                        const data = {
+                            pos: currentCoordPath.current.pos,
+                            width: currentCoordPath.current.width,
+                            color: currentCoordPath.current.color
+                        };
+                        socket.emit('update', data);
                         drawCurveFromCoordPath(context, currentCoordPath.current,
                                                props.smoothness, props.thinning);
 
                         // Weird quirk: this doesn't work:
                         // coordPathStack.current.push(currentCoordPath.current);
                         // But this does:
-                        coordPathStack.current.push({
-                            pos: currentCoordPath.current.pos,
-                            width: currentCoordPath.current.width,
-                            color: currentCoordPath.current.color
-                        });
+                        coordPathStack.current.push(data);
 
                         // Reset the path
                         currentCoordPath.current.pos = []
@@ -187,13 +219,6 @@ function Paint(props: PaintProps) {
                         className='side-btn'
                         id='undo-btn'>
                         <img src={UndoImg} style={{'width':'30px', 'height':'30px'}}/>
-                    </button>
-                    <button
-                        onClick = {_ => {
-                            callApi().then(body => body.map((message: { [x: string]: any; }) => console.log("Message #" + message['id'] + " from " + message['name'])));
-                        }}
-                        className='side-btn'>
-                        <b>API</b>
                     </button>
                 </span>
             </div>

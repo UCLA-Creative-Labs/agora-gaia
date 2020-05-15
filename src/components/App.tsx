@@ -10,6 +10,7 @@ function App() {
     const size = useWindowSize();
     const canvasWidth = 0.8 * size.width;
     const canvasHeight = 0.85 * size.height;
+    let socket;
 
     return (
         <div id='app-wrapper'>
