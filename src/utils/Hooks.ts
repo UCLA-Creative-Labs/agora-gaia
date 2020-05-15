@@ -35,14 +35,13 @@ export async function getData(){
   return body;
 };
 
-export async function postData(data){
+export async function postData(data: string){
   const response = await fetch('/api/data', {
     method: 'POST',
     body: data,
     headers: {'content-type': 'application/json', 'Accept-Charset': 'UTF-8'},
   });
   const body = await response;
-  console.log(body)
-  if (!response.ok) throw Error(body.message);
+  if (!response.ok) throw Error(body.statusText);
   return body;
 };
