@@ -17,7 +17,7 @@ import {
     postData,
 } from '../utils/Hooks';
 
-import socket from '../utils/SocketUtils';
+import sock, * as SocketUtils from '../utils/SocketUtils';
 
 import './styles/Paint.scss';
 
@@ -58,15 +58,15 @@ function Paint(props: PaintProps) {
     });
 
     useEffect(() => {
-        socket.on('package', function(data: CoordPath[]){
+        SocketUtils.handlePackage((data: CoordPath[]) => {
             coordPathStack.current = data;
             const context = canvasRef.current.getContext('2d');
             drawAllCurvesFromStack(context, coordPathStack.current,
                 props.smoothness, props.thinning);
         });
 
-        socket.on('stroke', (data: CoordPath) => {
-            console.log("Another socket sent this: ")
+        SocketUtils.handleStroke((data: CoordPath) => {
+            console.log("Another sock sent this: ")
             console.log(data)
             const context = canvasRef.current.getContext('2d');
             coordPathStack.current.push({
@@ -148,12 +148,12 @@ function Paint(props: PaintProps) {
                         // line drawn by the user.
                         // (Note: this is still apparently un-antialiased for some reason :( )
                         // drawLineFromCoordPath(context, currentCoordPath.current);
-                        const data = {
+                        const data: CoordPath = {
                             pos: currentCoordPath.current.pos,
                             width: currentCoordPath.current.width,
                             color: currentCoordPath.current.color
                         };
-                        socket.emit('update', data);
+                        SocketUtils.sendStroke(data);
                         drawCurveFromCoordPath(context, currentCoordPath.current,
                                                props.smoothness, props.thinning);
 
