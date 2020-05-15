@@ -4,12 +4,21 @@ import Paint from './Paint';
 
 import { useWindowSize } from '../utils/Hooks';
 
+const io = require('socket.io-client');
+const ENDPOINT = "http://129.146.146.29:3000/";
+
 import './styles/App.scss';
 
 function App() {
     const size = useWindowSize();
     const canvasWidth = 0.8 * size.width;
     const canvasHeight = 0.85 * size.height;
+
+    const [response, setResponse] = useState("");
+
+    useEffect(() => {
+        const socket = io('http://129.146.146.29:3000/');
+    }, []);
 
     return (
         <div id='app-wrapper'>
