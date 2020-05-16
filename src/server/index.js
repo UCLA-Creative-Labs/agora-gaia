@@ -2,13 +2,10 @@ const express = require("express");
 const http = require("http");
 const socketIo = require("socket.io");
 const db = require('./queries.js');
-const cl = require('./client_def.js');
 
 const port = 3000;
 const app = express();
-
 const server = http.createServer(app);
-
 const io = socketIo(server);
 
 var client_count = 0;
