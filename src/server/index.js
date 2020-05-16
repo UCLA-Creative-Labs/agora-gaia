@@ -18,6 +18,7 @@ io.on("connection", (socket) => {
   client_count += 1;
   console.log("New client connected. Current connection count: " + client_count);
   db.getData(socket);
+
   socket.on("update", (data) => {
     if(buffer_pool.get(socket.handshake.address)){
       socket.emit("ack", "Something Exists already pls undo");
@@ -42,6 +43,7 @@ io.on("connection", (socket) => {
     }
     socket.emit("ack", res);
   });
+
   socket.on("disconnect", () => {
     client_count -= 1;
     console.log("Client disconnected Current connection count: " + client_count);
