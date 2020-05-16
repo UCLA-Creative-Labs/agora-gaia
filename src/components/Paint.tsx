@@ -11,13 +11,17 @@ import {
     undrawLineFromCoordPath, undrawCurveFromCoordPath,
     drawAllCurvesFromStack,
     drawFromBuffer,
-    panCanvas
+    panCanvas,
+    stackIncludesPath
 } from '../utils/PaintUtils';
 import {
     Coord, distance,
     outOfBoundsX, outOfBoundsY,
     rectOutOfBoundsX, rectOutOfBoundsY
 } from '../utils/MathUtils';
+import {
+    isLocalStorageAvailable
+} from '../utils/StorageUtils';
 import sock, * as SocketUtils from '../utils/SocketUtils';
 
 import './styles/Paint.scss';
@@ -33,6 +37,7 @@ function Paint(props: PaintProps) {
 
     const [ context, setContext ] = useState<CanvasRenderingContext2D>(null);
     const [ stack, setStack ] = useState<CoordPath[]>([]);
+    const [ isStackEmpty, setIsStackEmpty ] = useState(true);
     const [ cannotDraw, setCannotDraw ] = useState<boolean>(props.cannotDraw);
     const toggleCannotDraw = () => { setCannotDraw(!cannotDraw); }
 
@@ -77,12 +82,25 @@ function Paint(props: PaintProps) {
     }, [canvas]);
 
     useEffect(() => {
+        setIsStackEmpty(stack.length == 0);
+        if (!isLocalStorageAvailable() || isStackEmpty) return;
+
+        const storage = window.localStorage;
+        storage.setItem('stack', JSON.stringify(stack));
+    }, [stack]);
+
+    useEffect(() => {
         const bufferContext = buffer.getContext('2d');
-        if (!context || !bufferContext) return;
+        if (!context || !bufferContext || !isStackEmpty) return;
 
         SocketUtils.handlePackage((data: CoordPath[]) => {
-            setStack(data);
-            drawAllCurvesFromStack(bufferContext, data,
+            const localStack = JSON.parse(window.localStorage.getItem('stack')) || [];
+            const neededData = data.filter(p => !stackIncludesPath(p, localStack));
+            const initialStack = [...localStack, ...neededData];
+
+            setStack(initialStack);
+
+            drawAllCurvesFromStack(bufferContext, initialStack,
                 props.smoothness, props.thinning);
             drawFromBuffer(context, canvas, canvasOffset, buffer);
         });
@@ -94,7 +112,7 @@ function Paint(props: PaintProps) {
             drawFromBuffer(context, canvas, canvasOffset, buffer);
         });
 
-    }, [context]);
+    }, [canvas, context, isStackEmpty]);
 
     const onResize = () => {
         const bufferRect = { sx: 0, sy: 0, width: buffer.width, height: buffer.height };

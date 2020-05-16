@@ -172,15 +172,41 @@ export function drawFromBuffer(context: CanvasRenderingContext2D,
 export function panCanvas(canvas: HTMLCanvasElement, buffer: HTMLCanvasElement,
                           canvasOffset: Coord, movement: Coord) {
     canvasOffset.x -= movement.x;
-    console.log('Panning');
     canvasOffset.y -= movement.y;
 
     const bufferRect = { sx: 0, sy: 0, width: buffer.width, height: buffer.height };
     const canvasRect = { sx: canvasOffset.x, sy: canvasOffset.y,
                          width: canvas.width, height: canvas.height };
 
+    // If the attempted pan results in moving the canvas beyond the buffer's bounds,
+    // reverse the offending movement.
     if (rectOutOfBoundsX(canvasRect, bufferRect))
         canvasOffset.x += movement.x;
     if (rectOutOfBoundsY(canvasRect, bufferRect))
         canvasOffset.y += movement.y;
+}
+
+// Does a deep check to see if two paths are equal
+// [O(n^2) with n = average path length]
+export function coordPathsEqual(path1: CoordPath, path2: CoordPath): boolean {
+    if (path1.pos.length != path2.pos.length
+        || path1.width != path2.width || path1.color != path2.color)
+        return false;
+
+    for (let i = 0; i < path1.pos.length; i++) {
+        if (path1.pos[i].x != path2.pos[i].x
+           && path1.pos[i].y != path2.pos[i].y) return false;
+    }
+
+    return true;
+}
+
+// Does a deep check to see if the stack includes a path
+// [O(mn^2) where m = stack size and n = average path length]
+export function stackIncludesPath(path: CoordPath, stack: CoordPath[]) {
+    for (let i = 0; i < stack.length; i++) {
+        if (coordPathsEqual(path, stack[i])) return true;
+    }
+
+    return false;
 }
