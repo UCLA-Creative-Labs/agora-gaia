@@ -16,10 +16,6 @@ import {
     Coord, distance, outOfBounds
 } from '../utils/MathUtils';
 import sock, * as SocketUtils from '../utils/SocketUtils';
-import {
-    getData,
-    postData,
-} from '../utils/Hooks';
 
 import './styles/Paint.scss';
 
