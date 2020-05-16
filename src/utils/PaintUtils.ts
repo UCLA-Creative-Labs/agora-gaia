@@ -38,7 +38,8 @@ export interface CanvasProps {
     currentCoordPath?: CoordPath,
     coordPathStack?: CoordPath[],
     colors?: string[],
-    paintProps?: PaintProps
+    paintProps?: PaintProps,
+    popStack?: () => void
 }
 
 export enum Side {
@@ -138,6 +139,7 @@ export function undo(context: CanvasRenderingContext2D,
                      buffer: HTMLCanvasElement,
                      canvasOffset: Coord,
                      coordPathStack: CoordPath[],
+                     popStack: () => void,
                      rerenderAll: boolean,
                      smoothness: number, thinning: number = 0) {
     let stackSize = coordPathStack.length;
@@ -145,16 +147,15 @@ export function undo(context: CanvasRenderingContext2D,
 
     if (rerenderAll) {
         // If we're rerendering, just redraw everything.
-        coordPathStack.pop();
         bufferContext.clearRect(0, 0, buffer.width, buffer.height);
-        drawAllCurvesFromStack(bufferContext, coordPathStack,
+        drawAllCurvesFromStack(bufferContext, coordPathStack.slice(0,-1),
                                smoothness, thinning);
     } else {
         // Otherwise, undraw the last curve
-        console.log('undo');
-        undrawCurveFromCoordPath(bufferContext, coordPathStack.pop(),
+        undrawCurveFromCoordPath(bufferContext, coordPathStack[stackSize - 1],
                                  smoothness, -1);
     }
+    popStack();
     drawFromBuffer(context, canvas, canvasOffset, buffer);
 }
 

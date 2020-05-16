@@ -57,6 +57,7 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
                                  props.bufferContext, props.buffer,
                                  props.canvasOffset,
                                  props.coordPathStack,
+                                 props.popStack,
                                  props.paintProps.rerenderAll, props.paintProps.smoothness);
                             props.context.strokeStyle = props.currentCoordPath.color;
                             props.context.lineWidth = props.currentCoordPath.width;
