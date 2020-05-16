@@ -37,6 +37,7 @@ function Paint(props: PaintProps) {
 
     const [ context, setContext ] = useState<CanvasRenderingContext2D>(null);
     const [ stack, setStack ] = useState<CoordPath[]>([]);
+    const popStack = () => { setStack(prevStack => prevStack.slice(0,-1)); };
     const [ isStackEmpty, setIsStackEmpty ] = useState(true);
     const [ cannotDraw, setCannotDraw ] = useState<boolean>(props.cannotDraw);
     const toggleCannotDraw = () => { setCannotDraw(!cannotDraw); }
@@ -83,7 +84,7 @@ function Paint(props: PaintProps) {
 
     useEffect(() => {
         setIsStackEmpty(stack.length == 0);
-        if (!isLocalStorageAvailable() || isStackEmpty) return;
+        if (!isLocalStorageAvailable() || stack.length == 0) return;
 
         const storage = window.localStorage;
         storage.setItem('stack', JSON.stringify(stack));
@@ -93,14 +94,18 @@ function Paint(props: PaintProps) {
         const bufferContext = buffer.getContext('2d');
         if (!context || !bufferContext || !isStackEmpty) return;
 
+        const localStack: CoordPath[] = JSON.parse(window.localStorage.getItem('stack')) || [];
+        if (localStack.length > 0) {
+            setStack(localStack);
+            drawAllCurvesFromStack(bufferContext, localStack, props.smoothness, props.thinning);
+        }
+
         SocketUtils.handlePackage((data: CoordPath[]) => {
-            const localStack = JSON.parse(window.localStorage.getItem('stack')) || [];
             const neededData = data.filter(p => !stackIncludesPath(p, localStack));
-            const initialStack = [...localStack, ...neededData];
 
-            setStack(initialStack);
+            setStack(prevStack => [...prevStack, ...neededData]);
 
-            drawAllCurvesFromStack(bufferContext, initialStack,
+            drawAllCurvesFromStack(bufferContext, neededData,
                 props.smoothness, props.thinning);
             drawFromBuffer(context, canvas, canvasOffset, buffer);
         });
@@ -291,7 +296,8 @@ function Paint(props: PaintProps) {
                     currentCoordPath={currentCoordPath.current}
                     coordPathStack={stack}
                     paintProps={props}
-                    callbacks={[toggleCannotDraw]}/>
+                    callbacks={[toggleCannotDraw]}
+                    popStack={popStack}/>
             </div>
             <br />
             <ColorButtons
