@@ -24,19 +24,27 @@ import './styles/Paint.scss';
 
 function Paint(props: PaintProps) {
     // State variables
-    const [ canvas, setCanvas ] = useState(null);
-    const [ context, setContext ] = useState(null);
-    const [ stack, setStack ] = useState([]);
+    const [ canvas, setCanvas ] = useState<HTMLCanvasElement>(null);
+    const [ context, setContext ] = useState<CanvasRenderingContext2D>(null);
+    const [ stack, setStack ] = useState<CoordPath[]>([]);
+    const [ cannotDraw, setCannotDraw ] = useState<boolean>(props.cannotDraw);
+    const toggleCannotDraw = () => { setCannotDraw(!cannotDraw); }
 
     const canvasRef = useCallback(ref => { if (ref !== null) { setCanvas(ref); } }, [setCanvas]);
 
     // Check whether the user is currently drawing
     const isDrawing: React.MutableRefObject<boolean> = useRef(false);
+    // Check whether the user is currently panning
+    const isPanning: React.MutableRefObject<boolean> = useRef(false);
 
     // To track the mouse position
-    const mousePos: React.MutableRefObject<Coord> = useRef({ x: 0, y:0 });
+    const mousePos: React.MutableRefObject<Coord> = useRef({ x: 0, y: 0 });
     // To track the length of the current coord path
     const coordPathLen: React.MutableRefObject<number> = useRef(0);
+    // Track what the canvas looks like on pan (faster than redrawing)
+    const imageDataRef: React.MutableRefObject<ImageData> = useRef(null);
+    // Track pan translation amount
+    const tlate: React.MutableRefObject<Coord> = useRef({ x: 0, y: 0 });
 
     // A tuple of a list of mouse positions and a number to represent the width
     // of the line being drawn.
@@ -48,11 +56,15 @@ function Paint(props: PaintProps) {
     // If the element doesn't have a colors property, default to black + RGB
     const colors: string[] = props.colors || [ 'black', 'red', 'green', 'blue' ]
 
+    const canv: HTMLCanvasElement = document.createElement('canvas');
+
     useEffect(() => {
         // setCanvas(canvasRef.current);
         if (!canvas) return;
         const context = canvas.getContext('2d');
         setContext(context);
+        canv.width = canvas.width;
+        canv.height = canvas.height;
 
         drawAllCurvesFromStack(context, stack,
                                props.smoothness, props.thinning);
@@ -77,7 +89,6 @@ function Paint(props: PaintProps) {
 
     useEffect(() => {
         const onResize = () => {
-            console.log(stack);
             drawAllCurvesFromStack(context, stack, props.smoothness, props.thinning);
         };
 
@@ -101,20 +112,44 @@ function Paint(props: PaintProps) {
                     id='paint-canvas'
                     onMouseDown = {e => {
                         // Only proceed if the left mouse is pressed
-                        if (e.button != 0 || props.cannotDraw) return;
+                        if (e.button != 0) return;
+
+                        if (cannotDraw) {
+                            canvas.style.cursor = 'grabbing';
+                            // const currentTransform = context.getTransform();
+                            // context.setTransform(1, 0, 0, 1, 0, 0);
+                            // context.clearRect(0, 0, canvas.width, canvas.height);
+                            // drawAllCurvesFromStack(context, stack, props.smoothness, props.thinning);
+                            // context.setTransform(currentTransform);
+                            // imageDataRef.current = context.getImageData(0, 0, canvas.width, canvas.height);
+                            // context.clearRect(0, 0, canvas.width, canvas.height);
+                            // drawAllCurvesFromStack(context, stack, props.smoothness, props.thinning);
+
+                            isPanning.current = true;
+                            return;
+                        }
 
                         const bounds = canvas.getBoundingClientRect();
 
                         // Calculate the mouse position relative to the <canvas> element.
-                        mousePos.current = { x: e.clientX - bounds.left, 
-                                             y: e.clientY - bounds.top };
+                        mousePos.current = { x: e.clientX - bounds.left - tlate.current.x, 
+                                             y: e.clientY - bounds.top - tlate.current.y };
                         isDrawing.current = true;
                         currentCoordPath.current.pos = [ mousePos.current ];
                         coordPathLen.current = 0;
                     }}
                     onMouseUp = {e => {
                         // Only proceed if the left mouse is pressed and isDrawing
-                        if (e.button != 0 || !isDrawing || props.cannotDraw) return;
+                        if (e.button != 0 || !isDrawing) return;
+
+                        if (cannotDraw) {
+                            canvas.style.cursor = 'grab';
+                            isPanning.current = false;
+                            context.clearRect(0, 0, canvas.width, canvas.height);
+                            drawAllCurvesFromStack(context, stack, props.smoothness, props.thinning);
+                            // translation.current = { x: 0, y: 0 };
+                            return;
+                        }
 
                         mousePos.current = { x: 0, y: 0 };
                         isDrawing.current = false;
@@ -147,29 +182,53 @@ function Paint(props: PaintProps) {
                         currentCoordPath.current.pos = []
                     }}
                     onMouseMove = {e => {
+                        if (cannotDraw) {
+                            canvas.style.cursor = 'grab';
+                        } else canvas.style.cursor = 'auto';
+
                         // Only proceed if the left mouse is pressed
-                        if (e.button != 0 || !isDrawing || props.cannotDraw) return;
+                        if (e.button != 0 || !isDrawing) return;
 
-                        // const canvas = canvasRef.current;
-                        const bounds = canvas.getBoundingClientRect();
+                        if (cannotDraw && isPanning.current) {
+                            canvas.style.cursor = 'grabbing';
 
-                        const mouseScreenPos = { x: e.clientX, y: e.clientY };
+                            tlate.current.x += e.movementX;
+                            tlate.current.y += e.movementY;
 
-                        if (isDrawing.current) {
-                            const end: Coord = { x: e.clientX - bounds.left,
-                                                 y: e.clientY - bounds.top };
-                            drawLine(context, mousePos.current, end, currentCoordPath.current.width);
+                            // context.putImageData(imageDataRef.current, tlate.current.x, tlate.current.y);
 
-                            currentCoordPath.current.pos.push(end);
-                            coordPathLen.current += distance(mousePos.current, end);
+                            // context.putImageData(imageDataRef.current, e.movementX, e.movementY);
+                            // imageDataRef.current = context.getImageData(0, 0, canvas.width, canvas.height);
 
-                            if (props.maxStrokeLen && coordPathLen.current >= props.maxStrokeLen) {
-                                canvas.dispatchEvent(new MouseEvent('mouseup', {
-                                    bubbles: true, cancelable: true
-                                }));
+                            canv.getContext('2d').drawImage(canvas, 0, 0, canvas.width, canvas.height, 0, 0, canv.width, canv.height);
+                            const transform = context.getTransform();
+                            context.setTransform(1,0,0,1,0,0);
+                            context.clearRect(0, 0, canvas.width, canvas.height);
+                            context.setTransform(transform);
+                            context.translate(e.movementX, e.movementY);
+                            context.drawImage(canv, 0, 0, canv.width, canv.height, 0, 0, canvas.width, canvas.height);
+
+                            // drawAllCurvesFromStack(context, stack, props.smoothness, props.thinning);
+                        } else {
+                            // const canvas = canvasRef.current;
+                            const bounds = canvas.getBoundingClientRect();
+
+                            if (isDrawing.current) {
+                                const end: Coord = { x: e.clientX - bounds.left - tlate.current.x,
+                                                     y: e.clientY - bounds.top  - tlate.current.y};
+                                drawLine(context, mousePos.current, end, currentCoordPath.current.width);
+
+                                currentCoordPath.current.pos.push(end);
+                                coordPathLen.current += distance(mousePos.current, end);
+
+                                if (props.maxStrokeLen && coordPathLen.current >= props.maxStrokeLen) {
+                                    canvas.dispatchEvent(new MouseEvent('mouseup', {
+                                        bubbles: true, cancelable: true
+                                    }));
+                                }
+
+                                mousePos.current = end;
                             }
-
-                            mousePos.current = end;
                         }
                     }}
                     onMouseLeave = {e => {
@@ -189,7 +248,8 @@ function Paint(props: PaintProps) {
                     canvas={canvas}
                     currentCoordPath={currentCoordPath.current}
                     coordPathStack={stack}
-                    paintProps={props}/>
+                    paintProps={props}
+                    callbacks={[toggleCannotDraw]}/>
             </div>
             <br />
             <ColorButtons

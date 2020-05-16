@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 import {
     Side,
@@ -11,9 +11,12 @@ import './styles/Paint.scss';
 import UndoImg from '../assets/icons/undo-black-18dp.svg';
 import ZoomInImg from '../assets/icons/add-black-18dp.svg';
 import ZoomOutImg from '../assets/icons/remove-black-18dp.svg';
+import BrushImg from '../assets/icons/brush-black-18dp.svg';
+import PanImg from '../assets/icons/pan_tool-black-18dp.svg';
 
 function DrawControls(props: CanvasProps & DrawControlProps) {
     const [ width, setWidth ] = useState(props.currentCoordPath.width);
+    const [ drawToggleBtn, setDrawToggleBtn ] = useState(PanImg);
 
     switch (props.side) {
         case Side.Left:
@@ -58,6 +61,16 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
                         className='side-btn'
                         id='undo-btn'>
                         <img src={UndoImg} style={{'width':'30px', 'height':'30px'}}/>
+                    </button>
+                    <button
+                        onClick = {_ => {
+                            props.callbacks[0]();
+                            if (drawToggleBtn == BrushImg) setDrawToggleBtn(PanImg);
+                            else setDrawToggleBtn(BrushImg);
+                        }}
+                        className='side-btn'
+                        id='brush-btn'>
+                        <img src={drawToggleBtn} style={{'width':'30px', 'height':'30px'}}/>
                     </button>
                 </span>
             );

@@ -39,7 +39,8 @@ export enum Side {
 }
 
 export interface DrawControlProps {
-    side: Side
+    side: Side,
+    callbacks?: Array<(...args: any) => any>
 }
 
 export function drawLine(context: CanvasRenderingContext2D,
