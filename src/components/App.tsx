@@ -17,6 +17,8 @@ function App() {
             <Paint
                 width={canvasWidth}
                 height={canvasHeight}
+                maxWidth={3840}
+                maxHeight={2160}
                 lineWidth={2}
                 smoothness={2}
                 thinning={0.3}
@@ -40,7 +42,7 @@ function App() {
                     'yellow',
                 ]}
                 maxStrokeLen={0}
-                rerenderAll={true} // Warning: slows down quickly when true
+                rerenderAll={false} // Warning: slows down quickly when true
             />
         </div>
     );

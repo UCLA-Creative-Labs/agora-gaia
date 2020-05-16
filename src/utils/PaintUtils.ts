@@ -1,8 +1,12 @@
-import { Coord, distance } from './MathUtils';
+import {
+    Coord, distance,
+    rectOutOfBoundsX, rectOutOfBoundsY
+} from './MathUtils';
 
 // Interface to hold properties for this component.
 export interface PaintProps {
     width: number, height: number,
+    maxWidth: number, maxHeight: number,
     lineWidth: number,
 
     // Line smoothing/thinning is a global property, not user defined, so
@@ -23,6 +27,28 @@ export interface PaintProps {
 
 export interface CoordPath {
     pos: Coord[], width: number, color?: string
+}
+
+export interface CanvasProps {
+    context?: CanvasRenderingContext2D,
+    canvas?: HTMLCanvasElement,
+    bufferContext?: CanvasRenderingContext2D,
+    buffer?: HTMLCanvasElement,
+    canvasOffset?: Coord,
+    currentCoordPath?: CoordPath,
+    coordPathStack?: CoordPath[],
+    colors?: string[],
+    paintProps?: PaintProps,
+    popStack?: () => void
+}
+
+export enum Side {
+    Left, Right
+}
+
+export interface DrawControlProps {
+    side: Side,
+    callbacks?: Array<(...args: any) => any>
 }
 
 export function drawLine(context: CanvasRenderingContext2D,
@@ -107,29 +133,81 @@ export function drawAllCurvesFromStack(context: CanvasRenderingContext2D,
     });
 }
 
-export function undo(canvas: HTMLCanvasElement,
+export function undo(context: CanvasRenderingContext2D,
+                     canvas: HTMLCanvasElement,
+                     bufferContext: CanvasRenderingContext2D,
+                     buffer: HTMLCanvasElement,
+                     canvasOffset: Coord,
                      coordPathStack: CoordPath[],
+                     popStack: () => void,
                      rerenderAll: boolean,
                      smoothness: number, thinning: number = 0) {
     let stackSize = coordPathStack.length;
     if (stackSize <= 0) return;
 
-    const context = canvas.getContext('2d');
-
     if (rerenderAll) {
-        coordPathStack.pop();
-        context.clearRect(0, 0, canvas.width, canvas.height);
-        drawAllCurvesFromStack(context, coordPathStack,
+        // If we're rerendering, just redraw everything.
+        bufferContext.clearRect(0, 0, buffer.width, buffer.height);
+        drawAllCurvesFromStack(bufferContext, coordPathStack.slice(0,-1),
                                smoothness, thinning);
     } else {
-        undrawCurveFromCoordPath(context, coordPathStack.pop(),
+        // Otherwise, undraw the last curve
+        undrawCurveFromCoordPath(bufferContext, coordPathStack[stackSize - 1],
                                  smoothness, -1);
-        stackSize = coordPathStack.length;
-        if (stackSize > 0)
-            drawCurveFromCoordPath(
-                context,
-                coordPathStack[stackSize - 1],
-                smoothness, thinning
-            );
     }
+    popStack();
+    drawFromBuffer(context, canvas, canvasOffset, buffer);
+}
+
+export function drawFromBuffer(context: CanvasRenderingContext2D,
+                               canvas: HTMLCanvasElement,
+                               offset: Coord,
+                               buffer: HTMLCanvasElement) {
+    // Clear the current canvas and draw a window from the buffer according to
+    // the current offset and canvas size.
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(buffer, offset.x, offset.y, canvas.width, canvas.height,
+                      0, 0, canvas.width, canvas.height);
+}
+
+export function panCanvas(canvas: HTMLCanvasElement, buffer: HTMLCanvasElement,
+                          canvasOffset: Coord, movement: Coord) {
+    canvasOffset.x -= movement.x;
+    canvasOffset.y -= movement.y;
+
+    const bufferRect = { sx: 0, sy: 0, width: buffer.width, height: buffer.height };
+    const canvasRect = { sx: canvasOffset.x, sy: canvasOffset.y,
+                         width: canvas.width, height: canvas.height };
+
+    // If the attempted pan results in moving the canvas beyond the buffer's bounds,
+    // reverse the offending movement.
+    if (rectOutOfBoundsX(canvasRect, bufferRect))
+        canvasOffset.x += movement.x;
+    if (rectOutOfBoundsY(canvasRect, bufferRect))
+        canvasOffset.y += movement.y;
+}
+
+// Does a deep check to see if two paths are equal
+// [O(n^2) with n = average path length]
+export function coordPathsEqual(path1: CoordPath, path2: CoordPath): boolean {
+    if (path1.pos.length != path2.pos.length
+        || path1.width != path2.width || path1.color != path2.color)
+        return false;
+
+    for (let i = 0; i < path1.pos.length; i++) {
+        if (path1.pos[i].x != path2.pos[i].x
+           && path1.pos[i].y != path2.pos[i].y) return false;
+    }
+
+    return true;
+}
+
+// Does a deep check to see if the stack includes a path
+// [O(mn^2) where m = stack size and n = average path length]
+export function stackIncludesPath(path: CoordPath, stack: CoordPath[]) {
+    for (let i = 0; i < stack.length; i++) {
+        if (coordPathsEqual(path, stack[i])) return true;
+    }
+
+    return false;
 }
