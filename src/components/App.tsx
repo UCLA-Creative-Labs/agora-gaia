@@ -8,8 +8,10 @@ import './styles/App.scss';
 
 function App() {
     const size = useWindowSize();
-    const canvasWidth = 0.8 * size.width;
-    const canvasHeight = 0.85 * size.height;
+    const maxWidth = 3840;
+    const maxHeight = 2160;
+    const canvasWidth = Math.min(0.8 * size.width, maxWidth);
+    const canvasHeight = Math.min(0.85 * size.height, maxHeight);
     let socket;
 
     return (
@@ -17,8 +19,8 @@ function App() {
             <Paint
                 width={canvasWidth}
                 height={canvasHeight}
-                maxWidth={3840}
-                maxHeight={2160}
+                maxWidth={maxWidth}
+                maxHeight={maxHeight}
                 lineWidth={2}
                 smoothness={2}
                 thinning={0.3}
