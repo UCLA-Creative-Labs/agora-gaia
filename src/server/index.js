@@ -25,6 +25,7 @@ io.on("connection", (socket) => {
 
   socket.on("update", (data) => {
     client_pool.set(socket.handshake.address, {'last_send': Date.now(), 'can_undo': true});
+    socket.emit('handshake', client_pool.get(socket.handshake.address))
     console.log(client_pool);
     db.pushData(data, socket);
   });

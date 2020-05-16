@@ -18,6 +18,11 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
     const [ width, setWidth ] = useState(props.currentCoordPath.width);
     const [ drawToggleBtn, setDrawToggleBtn ] = useState(PanImg);
 
+    useEffect(() => {
+        if (props.cannotDraw) setDrawToggleBtn(PanImg);
+        else setDrawToggleBtn(BrushImg);
+    }, [props.cannotDraw]);
+
     switch (props.side) {
         case Side.Left:
             return (
@@ -68,9 +73,9 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
                     </button>
                     <button
                         onClick = {_ => {
-                            props.callbacks[0]();
-                            if (drawToggleBtn == BrushImg) setDrawToggleBtn(PanImg);
-                            else setDrawToggleBtn(BrushImg);
+                            if (!props.canToggle) return;
+
+                            props.toggleCannotDraw();
                         }}
                         className='side-btn'
                         id='brush-btn'>

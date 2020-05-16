@@ -37,6 +37,7 @@ export interface CanvasProps {
     canvasOffset?: Coord,
     currentCoordPath?: CoordPath,
     coordPathStack?: CoordPath[],
+    cannotDraw?: boolean,
     colors?: string[],
     paintProps?: PaintProps,
     popStack?: () => void
@@ -48,7 +49,8 @@ export enum Side {
 
 export interface DrawControlProps {
     side: Side,
-    callbacks?: Array<(...args: any) => any>
+    toggleCannotDraw?: () => void,
+    canToggle?: boolean
 }
 
 export function drawLine(context: CanvasRenderingContext2D,

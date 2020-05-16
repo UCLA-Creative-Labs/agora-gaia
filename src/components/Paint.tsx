@@ -42,6 +42,7 @@ function Paint(props: PaintProps) {
     const [ isStackEmpty, setIsStackEmpty ] = useState(true);
     const [ cannotDraw, setCannotDraw ] = useState<boolean>(props.cannotDraw);
     const toggleCannotDraw = () => { setCannotDraw(!cannotDraw); }
+    const [ canToggle, setCanToggle ] = useState(true);
 
     const canvasRef = useCallback(ref => { if (ref !== null) { setCanvas(ref); } }, [setCanvas]);
 
@@ -104,14 +105,23 @@ function Paint(props: PaintProps) {
         SocketUtils.handleHandshake((data: SocketUtils.Handshake) => {
             setHandshake(data);
             console.log('handshake');
+            console.log(data);
             
             const draw_limit_min = .1;
             const draw_limit = draw_limit_min * 60 * 1000;
             const time_diff = Date.now() - data.last_send;
+            console.log(draw_limit);
+            console.log(time_diff);
+
             if(data.last_send && time_diff < draw_limit){
                 console.log(time_diff)
                 setCannotDraw(true);
-                setTimeout(() => {console.log("lmao wat"); setCannotDraw(false)}, draw_limit - time_diff)
+                setCanToggle(false);
+                setTimeout(() => {
+                    console.log("lmao wat");
+                    setCannotDraw(false);
+                    setCanToggle(true);
+                }, draw_limit - time_diff)
             }
         })
 
@@ -310,8 +320,10 @@ function Paint(props: PaintProps) {
                     canvasOffset={canvasOffset}
                     currentCoordPath={currentCoordPath.current}
                     coordPathStack={stack}
+                    cannotDraw={cannotDraw}
+                    canToggle={canToggle}
                     paintProps={props}
-                    callbacks={[toggleCannotDraw]}
+                    toggleCannotDraw={toggleCannotDraw}
                     popStack={popStack}/>
             </div>
             <br />
