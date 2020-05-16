@@ -21,11 +21,12 @@ const getData = (socket) => {
   })
 }
 
-const pushData = (data) => {
+const pushData = (data, socket) => {
   pool.query('INSERT INTO canvas_data VALUES (now(), $1)',[data], (error, results) => {
     if (error) {
       throw error
     }
+    socket.broadcast.emit('stroke', data);
   })
 }
 

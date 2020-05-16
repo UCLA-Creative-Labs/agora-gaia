@@ -69,9 +69,11 @@ function Paint(props: PaintProps) {
                 props.smoothness, props.thinning);
         });
 
+        socket.on('ack', (res) => {
+            console.log(res);
+        });
+
         socket.on('stroke', (data) => {
-            console.log("Another socket sent this: ")
-            console.log(data)
             const context = canvasRef.current.getContext('2d');
             coordPathStack.current.push({
                 pos: data.pos,
@@ -210,6 +212,7 @@ function Paint(props: PaintProps) {
                 <span id='draw-controls'>
                     <button
                         onClick = {_ => {
+                            socket.emit('undo', "lel");
                             const context = canvasRef.current.getContext('2d');
                             undo(canvasRef.current, coordPathStack.current,
                                  props.rerenderAll, props.smoothness);
