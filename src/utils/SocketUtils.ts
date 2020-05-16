@@ -1,8 +1,12 @@
 import io from 'socket.io-client'
 
 import { CoordPath } from './PaintUtils';
-// { path: '/socket' }
-const socket = io("http://129.146.146.29:3000/");
+const socket = io({path: '/socket'});
+// const socket = io("http://129.146.146.29:3000/");
+
+export function handleHandshake(callback: (data: any) => any) {
+    socket.on('handshake', callback);
+}
 
 export function handlePackage(callback: (data: CoordPath[]) => any) {
     socket.on('package', callback);
@@ -17,3 +21,7 @@ export function sendStroke(stroke: CoordPath) {
 }
 
 export default socket;
+
+export interface Handshake{
+    last_send: any, can_undo: boolean
+}

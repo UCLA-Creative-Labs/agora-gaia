@@ -37,6 +37,7 @@ function Paint(props: PaintProps) {
 
     const [ context, setContext ] = useState<CanvasRenderingContext2D>(null);
     const [ stack, setStack ] = useState<CoordPath[]>([]);
+    const [ handshake, setHandshake ] = useState<SocketUtils.Handshake>({last_send: null, can_undo: false});
     const popStack = () => { setStack(prevStack => prevStack.slice(0,-1)); };
     const [ isStackEmpty, setIsStackEmpty ] = useState(true);
     const [ cannotDraw, setCannotDraw ] = useState<boolean>(props.cannotDraw);
@@ -99,6 +100,20 @@ function Paint(props: PaintProps) {
             setStack(localStack);
             drawAllCurvesFromStack(bufferContext, localStack, props.smoothness, props.thinning);
         }
+
+        SocketUtils.handleHandshake((data: SocketUtils.Handshake) => {
+            setHandshake(data);
+            console.log('handshake');
+            
+            const draw_limit_min = .1;
+            const draw_limit = draw_limit_min * 60 * 1000;
+            const time_diff = Date.now() - data.last_send;
+            if(data.last_send && time_diff < draw_limit){
+                console.log(time_diff)
+                setCannotDraw(true);
+                setTimeout(() => {console.log("lmao wat"); setCannotDraw(false)}, draw_limit - time_diff)
+            }
+        })
 
         SocketUtils.handlePackage((data: CoordPath[]) => {
             const neededData = data.filter(p => !stackIncludesPath(p, localStack));

@@ -9,31 +9,26 @@ const server = http.createServer(app);
 const io = socketIo(server);
 
 var client_count = 0;
-
 let client_pool = new Map();
 
 io.on("connection", (socket) => {
+  console.log(client_pool)
+
   if(!client_pool.get(socket.handshake.address)){      // If current IP address has NOT been seen before
-    client_pool.set(socket.handshake.address, {'last_send': false, 'can_undo': false})
+    client_pool.set(socket.handshake.address, {'last_send': null, 'can_undo': false});
   }
-  socket.emit("handshake", client_pool.get(socket.handshake.address))
+
+  socket.emit('handshake', client_pool.get(socket.handshake.address))
   client_count += 1;
   console.log("New client connected. Current connection count: " + client_count);
   db.getData(socket);
 
   socket.on("update", (data) => {
-    if(client_pool.get(socket.handshake.address)){
-      socket.emit("ack", "Something Exists already pls undo");
-    }
-    else{
-      client_pool.set(socket.handshake.address, data);
-      console.log(client_pool)
-      console.log(1)
-      db.pushData(client_pool.get(socket.handshake.address), socket);
-      console.log(2);
-      socket.emit("ack", "Successfully pushed");
-    }
+    client_pool.set(socket.handshake.address, {'last_send': Date.now(), 'can_undo': true});
+    console.log(client_pool);
+    db.pushData(data, socket);
   });
+
   socket.on("undo", (data) => {
     let res;
     if(client_pool.get(socket.handshake.address)){
