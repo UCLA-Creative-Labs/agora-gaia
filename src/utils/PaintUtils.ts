@@ -25,6 +25,23 @@ export interface CoordPath {
     pos: Coord[], width: number, color?: string
 }
 
+export interface CanvasProps {
+    context?: CanvasRenderingContext2D,
+    canvas?: HTMLCanvasElement,
+    currentCoordPath?: CoordPath,
+    coordPathStack?: CoordPath[],
+    colors?: string[],
+    paintProps?: PaintProps
+}
+
+export enum Side {
+    Left, Right
+}
+
+export interface DrawControlProps {
+    side: Side
+}
+
 export function drawLine(context: CanvasRenderingContext2D,
                          start: Coord, end: Coord,
                          lineWidth: number) {

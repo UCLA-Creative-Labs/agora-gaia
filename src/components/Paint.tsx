@@ -1,34 +1,36 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
+
+import ColorButtons from './ColorButtons';
+import DrawControls from './DrawControls';
 
 import {
-    PaintProps, CoordPath,
+    PaintProps,
+    Side, CoordPath,
     drawLine,
     drawLineFromCoordPath, drawCurveFromCoordPath,
     undrawLineFromCoordPath, undrawCurveFromCoordPath,
-    drawAllCurvesFromStack,
-    undo
+    drawAllCurvesFromStack
 } from '../utils/PaintUtils';
 import {
     Coord, distance
 } from '../utils/MathUtils';
-
+import sock, * as SocketUtils from '../utils/SocketUtils';
 import {
     getData,
     postData,
 } from '../utils/Hooks';
 
-import sock, * as SocketUtils from '../utils/SocketUtils';
-
 import './styles/Paint.scss';
 
-import UndoImg from '../assets/icons/undo-black-18dp.svg';
-import ZoomInImg from '../assets/icons/add-black-18dp.svg';
-import ZoomOutImg from '../assets/icons/remove-black-18dp.svg';
-
 function Paint(props: PaintProps) {
-    // Note: can't use useState or useEffect because <canvas> doesn't keep re-rendering
-    //       like other elements.
-    const canvasRef: React.MutableRefObject<HTMLCanvasElement> = useRef(null);
+    // State variables
+    const [ canvas, setCanvas ] = useState(null);
+    const [ context, setContext ] = useState(null);
+    const [ stack, setStack ] = useState([]);
+
+    const canvasRef = useCallback(ref => { if (ref !== null) { setCanvas(ref); } }, [setCanvas]);
+
+    // Check whether the user is currently drawing
     const isDrawing: React.MutableRefObject<boolean> = useRef(false);
 
     // To track the mouse position
@@ -42,70 +44,56 @@ function Paint(props: PaintProps) {
         React.MutableRefObject<CoordPath> = useRef({
             pos: [], width: props.lineWidth, color: 'black'
         });
-    // A stack of mouse position lists, which track the path taken by the mouse
-    const coordPathStack:
-        React.MutableRefObject<CoordPath[]> = useRef([]);
 
     // If the element doesn't have a colors property, default to black + RGB
     const colors: string[] = props.colors || [ 'black', 'red', 'green', 'blue' ]
 
     useEffect(() => {
-        const context = canvasRef.current.getContext('2d');
+        // setCanvas(canvasRef.current);
+        if (!canvas) return;
+        const context = canvas.getContext('2d');
+        setContext(context);
 
-        // TODO: Renormalize coordinates for canvas dimensions if necessary
-        drawAllCurvesFromStack(context, coordPathStack.current,
+        drawAllCurvesFromStack(context, stack,
                                props.smoothness, props.thinning);
-    });
+    }, [canvas]);
 
     useEffect(() => {
+        if (!context) return;
+
         SocketUtils.handlePackage((data: CoordPath[]) => {
-            coordPathStack.current = data;
-            const context = canvasRef.current.getContext('2d');
-            drawAllCurvesFromStack(context, coordPathStack.current,
+            setStack(data);
+            drawAllCurvesFromStack(context, data,
                 props.smoothness, props.thinning);
         });
 
         SocketUtils.handleStroke((data: CoordPath) => {
-            console.log("Another sock sent this: ")
-            console.log(data)
-            const context = canvasRef.current.getContext('2d');
-            coordPathStack.current.push({
-                pos: data.pos,
-                width: data.width,
-                color: data.color
-            });
+            setStack(prevStack => [...prevStack, data]);
             drawCurveFromCoordPath(context, data,
                 props.smoothness, props.thinning);
         });
 
-    }, []);
+    }, [context]);
 
-    // TODO: Move <canvas> event handlers into separate functions. All those
-    //       .currents are ugly :'(
-    // TODO: Move buttons into separate components. As it stands this is too cluttered.
+    useEffect(() => {
+        const onResize = () => {
+            console.log(stack);
+            drawAllCurvesFromStack(context, stack, props.smoothness, props.thinning);
+        };
+
+        window.addEventListener('resize', onResize);
+
+        return () => {
+            window.removeEventListener('resize', onResize);
+        };
+    });
+
     return (
         <div id='all-wrapper'>
             <div id='canvas-wrapper'>
-                <span id='draw-controls'>
-                    <button
-                        onClick = {_ => {
-                            if (currentCoordPath.current.width <= 12)
-                                currentCoordPath.current.width += 1;
-                        }}
-                        className='side-btn'
-                        id='zoomin-btn'>
-                        <img src={ZoomInImg} style={{'width':'30px', 'height':'30px'}}/>
-                    </button>
-                    <button
-                        onClick = {_ => {
-                            if (currentCoordPath.current.width > 1)
-                                currentCoordPath.current.width -= 1;
-                        }}
-                        className='side-btn'
-                        id='zoomout-btn'>
-                        <img src={ZoomOutImg} style={{'width':'30px', 'height':'30px'}}/>
-                    </button>
-                </span>
+                <DrawControls
+                    side={Side.Left}
+                    currentCoordPath={currentCoordPath.current} />
                 <canvas
                     width={props.width}
                     height={props.height}
@@ -115,7 +103,6 @@ function Paint(props: PaintProps) {
                         // Only proceed if the left mouse is pressed
                         if (e.button != 0 || props.cannotDraw) return;
 
-                        const canvas = canvasRef.current;
                         const bounds = canvas.getBoundingClientRect();
 
                         // Calculate the mouse position relative to the <canvas> element.
@@ -134,13 +121,10 @@ function Paint(props: PaintProps) {
 
                         if (currentCoordPath.current.pos.length == 0) return;
 
-                        // Erase the drawn line and redraw a curve approximation.
-                        const context = canvasRef.current.getContext('2d');
-
                         // Rerendering the whole stack is expensive, so do this only if explicitly directed.
                         if (props.rerenderAll) {
-                            context.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-                            drawAllCurvesFromStack(context, coordPathStack.current, props.smoothness, props.thinning);
+                            context.clearRect(0, 0, canvas.width, canvas.height);
+                            drawAllCurvesFromStack(context, stack, props.smoothness, props.thinning);
                         } else {
                             undrawLineFromCoordPath(context, currentCoordPath.current);
                         }
@@ -157,10 +141,7 @@ function Paint(props: PaintProps) {
                         drawCurveFromCoordPath(context, currentCoordPath.current,
                                                props.smoothness, props.thinning);
 
-                        // Weird quirk: this doesn't work:
-                        // coordPathStack.current.push(currentCoordPath.current);
-                        // But this does:
-                        coordPathStack.current.push(data);
+                        setStack(prevStack => [...prevStack, data]);
 
                         // Reset the path
                         currentCoordPath.current.pos = []
@@ -169,8 +150,7 @@ function Paint(props: PaintProps) {
                         // Only proceed if the left mouse is pressed
                         if (e.button != 0 || !isDrawing || props.cannotDraw) return;
 
-                        const canvas = canvasRef.current;
-                        const context = canvas.getContext('2d');
+                        // const canvas = canvasRef.current;
                         const bounds = canvas.getBoundingClientRect();
 
                         const mouseScreenPos = { x: e.clientX, y: e.clientY };
@@ -194,7 +174,7 @@ function Paint(props: PaintProps) {
                     }}
                     onMouseLeave = {e => {
                         if (isDrawing.current)
-                            canvasRef.current.dispatchEvent(new MouseEvent('mouseup', {
+                            canvas.dispatchEvent(new MouseEvent('mouseup', {
                                 bubbles: true, cancelable: true
                             }));
                     }}
@@ -203,37 +183,19 @@ function Paint(props: PaintProps) {
                     }}>
                     {'Your browser doesn\'t support <canvas> elements :('}
                 </canvas>
-                <span id='draw-controls'>
-                    <button
-                        onClick = {_ => {
-                            const context = canvasRef.current.getContext('2d');
-                            undo(canvasRef.current, coordPathStack.current,
-                                 props.rerenderAll, props.smoothness);
-                            context.strokeStyle = currentCoordPath.current.color;
-                            context.lineWidth = currentCoordPath.current.width;
-                        }}
-                        className='side-btn'
-                        id='undo-btn'>
-                        <img src={UndoImg} style={{'width':'30px', 'height':'30px'}}/>
-                    </button>
-                </span>
+                <DrawControls
+                    side={Side.Right}
+                    context={context}
+                    canvas={canvas}
+                    currentCoordPath={currentCoordPath.current}
+                    coordPathStack={stack}
+                    paintProps={props}/>
             </div>
             <br />
-            <div id='color-btns'>
-                {colors.map(color => {
-                    return (
-                        <button
-                            key = {color+'-btn'}
-                            onClick = {_ => {
-                                const context = canvasRef.current.getContext('2d');
-                                context.strokeStyle = color;
-                                currentCoordPath.current.color = color;
-                            }}
-                            className = 'color-btn'
-                            style = {{ 'background': color }}/>
-                    );
-                })}
-            </div>
+            <ColorButtons
+                context={context}
+                currentCoordPath={currentCoordPath.current}
+                colors={colors} />
         </div>
     )
 }
