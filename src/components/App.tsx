@@ -17,6 +17,8 @@ function App() {
             <Paint
                 width={canvasWidth}
                 height={canvasHeight}
+                maxWidth={3840}
+                maxHeight={2160}
                 lineWidth={2}
                 smoothness={2}
                 thinning={0.3}

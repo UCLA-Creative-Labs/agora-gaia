@@ -3,6 +3,7 @@ import { Coord, distance } from './MathUtils';
 // Interface to hold properties for this component.
 export interface PaintProps {
     width: number, height: number,
+    maxWidth: number, maxHeight: number,
     lineWidth: number,
 
     // Line smoothing/thinning is a global property, not user defined, so
@@ -150,4 +151,13 @@ export function undo(canvas: HTMLCanvasElement,
                 smoothness, thinning
             );
     }
+}
+
+export function drawFromBuffer(context: CanvasRenderingContext2D,
+                               canvas: HTMLCanvasElement,
+                               offset: Coord,
+                               buffer: HTMLCanvasElement) {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(buffer, offset.x, offset.y, canvas.width, canvas.height,
+                      0, 0, canvas.width, canvas.height);
 }
