@@ -182,7 +182,7 @@ function Paint(props: PaintProps) {
                     onMouseMove = {e => {
                         if (cannotDraw) {
                             canvas.style.cursor = 'grab';
-                        } else canvas.style.cursor = 'auto';
+                        } else canvas.style.cursor = 'crosshair';
 
                         // Only proceed if the left mouse is pressed
                         if (e.button != 0) return;
