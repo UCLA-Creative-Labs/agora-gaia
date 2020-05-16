@@ -10,7 +10,8 @@ import {
     drawLineFromCoordPath, drawCurveFromCoordPath,
     undrawLineFromCoordPath, undrawCurveFromCoordPath,
     drawAllCurvesFromStack,
-    drawFromBuffer
+    drawFromBuffer,
+    panCanvas
 } from '../utils/PaintUtils';
 import {
     Coord, distance,
@@ -205,18 +206,8 @@ function Paint(props: PaintProps) {
 
                         if (cannotDraw && isPanning.current) {
                             canvas.style.cursor = 'grabbing';
-                            canvasOffset.x -= e.movementX;
-                            canvasOffset.y -= e.movementY;
-
-                            const bufferRect = { sx: 0, sy: 0, width: buffer.width, height: buffer.height };
-                            const canvasRect = { sx: canvasOffset.x, sy: canvasOffset.y,
-                                                 width: canvas.width, height: canvas.height };
-
-                            if(rectOutOfBoundsX(canvasRect, bufferRect))
-                                canvasOffset.x += e.movementX;
-
-                            if(rectOutOfBoundsY(canvasRect, bufferRect))
-                                canvasOffset.y += e.movementY;
+                            const movement = { x: e.movementX, y: e.movementY };
+                            panCanvas(canvas, buffer, canvasOffset, movement);
                         } else {
                             // const canvas = canvasRef.current;
                             const bounds = canvas.getBoundingClientRect();
@@ -247,6 +238,27 @@ function Paint(props: PaintProps) {
                             canvas.dispatchEvent(new MouseEvent('mouseup', {
                                 bubbles: true, cancelable: true
                             }));
+                    }}
+                    onTouchStart = {e => {
+                        e.preventDefault();
+                        console.log('touchstart');
+                        touchPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                    }}
+                    onTouchEnd = {e => {
+                        e.preventDefault();
+                        console.log('touchend');
+                    }}
+                    onTouchMove = {e => {
+                        e.preventDefault();
+                        const lastTouchPos: Coord = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                        const deltaX = lastTouchPos.x - touchPos.current.x;
+                        const deltaY = lastTouchPos.y - touchPos.current.y;
+                        touchPos.current = lastTouchPos;
+
+                        const movement = { x: deltaX, y: deltaY };
+
+                        panCanvas(canvas, buffer, canvasOffset, movement);
+                        drawFromBuffer(context, canvas, canvasOffset, buffer);
                     }}
                     onWheel={e => {
                         // TODO: Use e.deltaY to zoom into the canvas?

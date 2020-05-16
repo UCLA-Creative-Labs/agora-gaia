@@ -1,4 +1,7 @@
-import { Coord, distance } from './MathUtils';
+import {
+    Coord, distance,
+    rectOutOfBoundsX, rectOutOfBoundsY
+} from './MathUtils';
 
 // Interface to hold properties for this component.
 export interface PaintProps {
@@ -160,4 +163,20 @@ export function drawFromBuffer(context: CanvasRenderingContext2D,
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.drawImage(buffer, offset.x, offset.y, canvas.width, canvas.height,
                       0, 0, canvas.width, canvas.height);
+}
+
+export function panCanvas(canvas: HTMLCanvasElement, buffer: HTMLCanvasElement,
+                          canvasOffset: Coord, movement: Coord) {
+    canvasOffset.x -= movement.x;
+    console.log('Panning');
+    canvasOffset.y -= movement.y;
+
+    const bufferRect = { sx: 0, sy: 0, width: buffer.width, height: buffer.height };
+    const canvasRect = { sx: canvasOffset.x, sy: canvasOffset.y,
+                         width: canvas.width, height: canvas.height };
+
+    if (rectOutOfBoundsX(canvasRect, bufferRect))
+        canvasOffset.x += movement.x;
+    if (rectOutOfBoundsY(canvasRect, bufferRect))
+        canvasOffset.y += movement.y;
 }
