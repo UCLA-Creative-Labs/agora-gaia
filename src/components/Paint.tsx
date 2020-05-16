@@ -241,12 +241,10 @@ function Paint(props: PaintProps) {
                     }}
                     onTouchStart = {e => {
                         e.preventDefault();
-                        console.log('touchstart');
                         touchPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
                     }}
                     onTouchEnd = {e => {
                         e.preventDefault();
-                        console.log('touchend');
                     }}
                     onTouchMove = {e => {
                         e.preventDefault();
@@ -269,6 +267,9 @@ function Paint(props: PaintProps) {
                     side={Side.Right}
                     context={context}
                     canvas={canvas}
+                    bufferContext={buffer.getContext('2d')}
+                    buffer={buffer}
+                    canvasOffset={canvasOffset}
                     currentCoordPath={currentCoordPath.current}
                     coordPathStack={stack}
                     paintProps={props}

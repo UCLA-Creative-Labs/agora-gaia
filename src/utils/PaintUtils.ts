@@ -32,6 +32,9 @@ export interface CoordPath {
 export interface CanvasProps {
     context?: CanvasRenderingContext2D,
     canvas?: HTMLCanvasElement,
+    bufferContext?: CanvasRenderingContext2D,
+    buffer?: HTMLCanvasElement,
+    canvasOffset?: Coord,
     currentCoordPath?: CoordPath,
     coordPathStack?: CoordPath[],
     colors?: string[],
@@ -129,37 +132,38 @@ export function drawAllCurvesFromStack(context: CanvasRenderingContext2D,
     });
 }
 
-export function undo(canvas: HTMLCanvasElement,
+export function undo(context: CanvasRenderingContext2D,
+                     canvas: HTMLCanvasElement,
+                     bufferContext: CanvasRenderingContext2D,
+                     buffer: HTMLCanvasElement,
+                     canvasOffset: Coord,
                      coordPathStack: CoordPath[],
                      rerenderAll: boolean,
                      smoothness: number, thinning: number = 0) {
     let stackSize = coordPathStack.length;
     if (stackSize <= 0) return;
 
-    const context = canvas.getContext('2d');
-
     if (rerenderAll) {
+        // If we're rerendering, just redraw everything.
         coordPathStack.pop();
-        context.clearRect(0, 0, canvas.width, canvas.height);
-        drawAllCurvesFromStack(context, coordPathStack,
+        bufferContext.clearRect(0, 0, buffer.width, buffer.height);
+        drawAllCurvesFromStack(bufferContext, coordPathStack,
                                smoothness, thinning);
     } else {
-        undrawCurveFromCoordPath(context, coordPathStack.pop(),
+        // Otherwise, undraw the last curve
+        console.log('undo');
+        undrawCurveFromCoordPath(bufferContext, coordPathStack.pop(),
                                  smoothness, -1);
-        stackSize = coordPathStack.length;
-        if (stackSize > 0)
-            drawCurveFromCoordPath(
-                context,
-                coordPathStack[stackSize - 1],
-                smoothness, thinning
-            );
     }
+    drawFromBuffer(context, canvas, canvasOffset, buffer);
 }
 
 export function drawFromBuffer(context: CanvasRenderingContext2D,
                                canvas: HTMLCanvasElement,
                                offset: Coord,
                                buffer: HTMLCanvasElement) {
+    // Clear the current canvas and draw a window from the buffer according to
+    // the current offset and canvas size.
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.drawImage(buffer, offset.x, offset.y, canvas.width, canvas.height,
                       0, 0, canvas.width, canvas.height);

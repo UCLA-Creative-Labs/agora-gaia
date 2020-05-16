@@ -53,7 +53,10 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
                 <span id='draw-controls'>
                     <button
                         onClick = {_ => {
-                            undo(props.canvas, props.coordPathStack,
+                            undo(props.context, props.canvas,
+                                 props.bufferContext, props.buffer,
+                                 props.canvasOffset,
+                                 props.coordPathStack,
                                  props.paintProps.rerenderAll, props.paintProps.smoothness);
                             props.context.strokeStyle = props.currentCoordPath.color;
                             props.context.lineWidth = props.currentCoordPath.width;
