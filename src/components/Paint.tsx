@@ -13,7 +13,7 @@ import {
     drawFromBuffer
 } from '../utils/PaintUtils';
 import {
-    Coord, distance
+    Coord, distance, outOfBounds
 } from '../utils/MathUtils';
 import sock, * as SocketUtils from '../utils/SocketUtils';
 import {
@@ -96,17 +96,18 @@ function Paint(props: PaintProps) {
 
     }, [context]);
 
-    useEffect(() => {
-        const onResize = () => {
-            drawAllCurvesFromStack(context, stack, props.smoothness, props.thinning);
-        };
+    const onResize = () => {
+        drawAllCurvesFromStack(buffer.getContext('2d'), stack, props.smoothness, props.thinning);
+        drawFromBuffer(context, canvas, canvasOffset, buffer);
+    };
 
+    useEffect(() => {
         window.addEventListener('resize', onResize);
 
         return () => {
             window.removeEventListener('resize', onResize);
         };
-    });
+    }, [context, canvas, buffer]);
 
     return (
         <div id='all-wrapper'>
@@ -188,12 +189,18 @@ function Paint(props: PaintProps) {
                         } else canvas.style.cursor = 'auto';
 
                         // Only proceed if the left mouse is pressed
-                        if (e.button != 0 || !isDrawing) return;
+                        if (e.button != 0) return;
+
+                        if (!isDrawing.current && !isPanning.current) return;
 
                         if (cannotDraw && isPanning.current) {
                             canvas.style.cursor = 'grabbing';
                             canvasOffset.x -= e.movementX;
                             canvasOffset.y -= e.movementY;
+                            if (outOfBounds(canvasOffset, { sx: 0, sy: 0, width: buffer.width, height: buffer.height })) {
+                                canvasOffset.x += e.movementX;
+                                canvasOffset.y += e.movementY;
+                            }
                         } else {
                             // const canvas = canvasRef.current;
                             const bounds = canvas.getBoundingClientRect();
