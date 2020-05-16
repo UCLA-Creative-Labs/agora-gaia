@@ -38,23 +38,24 @@ function Paint(props: PaintProps) {
     const canvasRef = useCallback(ref => { if (ref !== null) { setCanvas(ref); } }, [setCanvas]);
 
     // Check whether the user is currently drawing
-    const isDrawing: React.MutableRefObject<boolean> = useRef(false);
+    const isDrawing = useRef(false);
     // Check whether the user is currently panning
-    const isPanning: React.MutableRefObject<boolean> = useRef(false);
+    const isPanning = useRef(false);
 
     // To track the mouse position
-    const mousePos: React.MutableRefObject<Coord> = useRef({ x: 0, y: 0 });
+    const mousePos = useRef<Coord>({ x: 0, y: 0 });
+    // To track touch position
+    const touchPos = useRef<Coord>({ x: 0, y: 0});
     // To track the length of the current coord path
-    const coordPathLen: React.MutableRefObject<number> = useRef(0);
+    const coordPathLen = useRef(0);
     // Track what the canvas looks like on pan (faster than redrawing)
-    const imageDataRef: React.MutableRefObject<ImageData> = useRef(null);
+    const imageDataRef = useRef<ImageData>(null);
     // Track pan translation amount
-    const tlate: React.MutableRefObject<Coord> = useRef({ x: 0, y: 0 });
+    const tlate = useRef<Coord>({ x: 0, y: 0 });
 
     // A tuple of a list of mouse positions and a number to represent the width
     // of the line being drawn.
-    const currentCoordPath:
-        React.MutableRefObject<CoordPath> = useRef({
+    const currentCoordPath = useRef<CoordPath>({
             pos: [], width: props.lineWidth, color: 'black'
         });
 
