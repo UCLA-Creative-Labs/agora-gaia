@@ -209,6 +209,7 @@ function Paint(props: PaintProps) {
                             if (isDrawing.current) {
                                 const end: Coord = { x: e.clientX - bounds.left + canvasOffset.x,
                                                      y: e.clientY - bounds.top  + canvasOffset.y};
+                                bufferContext.strokeStyle = currentCoordPath.current.color;
                                 drawLine(bufferContext, mousePos.current, end, currentCoordPath.current.width);
 
                                 currentCoordPath.current.pos.push(end);
