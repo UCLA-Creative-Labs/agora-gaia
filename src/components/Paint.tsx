@@ -13,7 +13,9 @@ import {
     drawFromBuffer
 } from '../utils/PaintUtils';
 import {
-    Coord, distance, outOfBounds
+    Coord, distance,
+    outOfBoundsX, outOfBoundsY,
+    rectOutOfBoundsX, rectOutOfBoundsY
 } from '../utils/MathUtils';
 import sock, * as SocketUtils from '../utils/SocketUtils';
 
@@ -93,7 +95,18 @@ function Paint(props: PaintProps) {
     }, [context]);
 
     const onResize = () => {
-        drawAllCurvesFromStack(buffer.getContext('2d'), stack, props.smoothness, props.thinning);
+        const bufferRect = { sx: 0, sy: 0, width: buffer.width, height: buffer.height };
+
+        if (outOfBoundsX(canvasOffset.x, bufferRect))
+            canvasOffset.x = bufferRect.sx - canvasOffset.x;
+        if (outOfBoundsX(canvasOffset.x + canvas.width, bufferRect))
+            canvasOffset.x = bufferRect.sx + bufferRect.width - canvas.width;
+
+        if (outOfBoundsY(canvasOffset.y, bufferRect))
+            canvasOffset.y = bufferRect.sy - canvasOffset.y;
+        if (outOfBoundsY(canvasOffset.y + canvas.width, bufferRect))
+            canvasOffset.y = bufferRect.sy + bufferRect.height - canvas.height;
+
         drawFromBuffer(context, canvas, canvasOffset, buffer);
     };
 
@@ -193,10 +206,16 @@ function Paint(props: PaintProps) {
                             canvas.style.cursor = 'grabbing';
                             canvasOffset.x -= e.movementX;
                             canvasOffset.y -= e.movementY;
-                            if (outOfBounds(canvasOffset, { sx: 0, sy: 0, width: buffer.width, height: buffer.height })) {
+
+                            const bufferRect = { sx: 0, sy: 0, width: buffer.width, height: buffer.height };
+                            const canvasRect = { sx: canvasOffset.x, sy: canvasOffset.y,
+                                                 width: canvas.width, height: canvas.height };
+
+                            if(rectOutOfBoundsX(canvasRect, bufferRect))
                                 canvasOffset.x += e.movementX;
+
+                            if(rectOutOfBoundsY(canvasRect, bufferRect))
                                 canvasOffset.y += e.movementY;
-                            }
                         } else {
                             // const canvas = canvasRef.current;
                             const bounds = canvas.getBoundingClientRect();
