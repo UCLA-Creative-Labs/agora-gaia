@@ -1,6 +1,7 @@
 import io from 'socket.io-client'
 
 import { CoordPath } from './PaintUtils';
+import { debug } from './Utils';
 const socket = io({path: '/socket'});
 // const socket = io("http://129.146.146.29:3000/");
 
@@ -62,6 +63,7 @@ export function unregisterDisableUndo(callback: (disableUndo: boolean) => any) {
 
 export function handleDrawLimit(callback: (limit: number) => any){
     socket.on('limit', callback);
+    debug('registering draw limit handler');
 }
 
 export function unregisterDrawLimit(callback: (limit: number) => any) {

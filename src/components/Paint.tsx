@@ -40,7 +40,7 @@ function Paint(props: PaintProps) {
     const [ context, setContext ] = useState<CanvasRenderingContext2D>(null);
     const [ stack, setStack ] = useState<CoordPath[]>([]);
     const [ handshake, setHandshake ] = useState<SocketUtils.Handshake>({last_send: null, can_undo: false});
-    const [ limit, setLimit ] = useState(0);
+    const [ limit, setLimit ] = useState(Number.MAX_SAFE_INTEGER);
     const popStack = () => { setStack(prevStack => prevStack.slice(0,-1)); };
     const [ isStackEmpty, setIsStackEmpty ] = useState(true);
     const [ cannotDraw, setCannotDraw ] = useState<boolean>(props.cannotDraw);
@@ -112,11 +112,6 @@ function Paint(props: PaintProps) {
             drawAllCurvesFromStack(bufferContext, localStack, props.smoothness, props.thinning);
         }
 
-        const drawLimitHandler = (limit: number) => {
-            debug('setting draw limit to ' + limit + ' ms');
-            setLimit(limit);
-        };
-
         const packageHandler = (data: CoordPath[]) => {
             debug('received package from socket');
             const neededData = data.filter(p => !stackIncludesPath(p, localStack));
@@ -142,7 +137,6 @@ function Paint(props: PaintProps) {
             window.localStorage.clear();
         };
 
-        SocketUtils.handleDrawLimit(drawLimitHandler);
         SocketUtils.handlePackage(packageHandler);
         SocketUtils.handleStroke(strokeHandler);
 
@@ -160,6 +154,16 @@ function Paint(props: PaintProps) {
         }
          */
     }, [canvas, context, isStackEmpty]);
+
+    useEffect(() => {
+        const drawLimitHandler = (limit: number) => {
+            debug('setting draw limit to ' + limit + ' ms');
+            debug('AAAAAAAAAAAAAAAAAAAAAAAAAA');
+            setLimit(limit);
+        };
+
+        SocketUtils.handleDrawLimit(drawLimitHandler);
+    }, []);
 
     useEffect(() => {
         const handshakeHandler = (data: SocketUtils.Handshake) => {
