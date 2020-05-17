@@ -104,21 +104,15 @@ function Paint(props: PaintProps) {
 
         SocketUtils.handleHandshake((data: SocketUtils.Handshake) => {
             setHandshake(data);
-            console.log('handshake');
-            console.log(data);
             
-            const draw_limit_min = .1;
+            const draw_limit_min = 2;
             const draw_limit = draw_limit_min * 60 * 1000;
             const time_diff = Date.now() - data.last_send;
-            console.log(draw_limit);
-            console.log(time_diff);
 
             if(data.last_send && time_diff < draw_limit){
-                console.log(time_diff)
                 setCannotDraw(true);
                 setCanToggle(false);
                 setTimeout(() => {
-                    console.log("lmao wat");
                     setCannotDraw(false);
                     setCanToggle(true);
                 }, draw_limit - time_diff)
@@ -141,6 +135,15 @@ function Paint(props: PaintProps) {
                 props.smoothness, props.thinning);
             drawFromBuffer(context, canvas, canvasOffset, buffer);
         });
+
+        // FOR RESETING LOCAL STORAGE MAYBE DO THIS TWICE A DAY?
+        SocketUtils.reset((data: any) => {
+            setStack([]);
+            if (!isLocalStorageAvailable()) return;
+            const storage = window.localStorage;
+            storage.setItem('stack', JSON.stringify([]));
+            console.log(storage);
+        })
 
     }, [canvas, context, isStackEmpty]);
 

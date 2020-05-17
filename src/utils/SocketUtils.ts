@@ -16,8 +16,20 @@ export function handleStroke(callback: (data: CoordPath) => any) {
     socket.on('stroke', callback);
 }
 
+export function reset(callback: (data: any) => any){
+    socket.on('reset', callback);
+}
+
+export function handleUndo(callback: (isErased: boolean) => any){
+    socket.on('erase', callback);
+}
+
 export function sendStroke(stroke: CoordPath) {
     socket.emit('update', stroke);
+}
+
+export function sendUndo(isErased: boolean) {
+    socket.emit('undo', null);
 }
 
 export default socket;
