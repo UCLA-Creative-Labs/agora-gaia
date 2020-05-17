@@ -48,6 +48,7 @@ function Paint(props: PaintProps) {
     const [ canToggle, setCanToggle ] = useState(true);
     const [ canUndo, setCanUndo ] = useState(false);
     const [ lastSend, setLastSend ] = useState(0);
+    const [ selfStore, setSelfStore ] = useState(false);
 
     const canvasRef = useCallback(ref => { if (ref !== null) { setCanvas(ref); } }, [setCanvas]);
 
@@ -76,6 +77,33 @@ function Paint(props: PaintProps) {
     // If the element doesn't have a colors property, default to black + RGB
     const colors: string[] = props.colors || [ 'black', 'red', 'green', 'blue' ]
 
+    const storageHandler = (e: StorageEvent) => {
+        if (e.key == 'stack' && !selfStore) {
+            debug('different instance wrote to local storage; locking');
+            setSelfStore(false);
+            // setStack(JSON.parse(e.newValue) || []);
+            setCannotDraw(true);
+            setCanUndo(false);
+            setCanToggle(false);
+        }
+    };
+
+    // Called only on component mount
+    useEffect(() => {
+        const drawLimitHandler = (limit: number) => {
+            debug('setting draw limit to ' + limit + ' ms');
+            setLimit(limit);
+        };
+
+        SocketUtils.handleDrawLimit(drawLimitHandler);
+
+        window.addEventListener('storage', storageHandler);
+
+        return () => {
+            window.removeEventListener('storage', storageHandler);
+        }
+    }, []);
+
     useEffect(() => {
         // setCanvas(canvasRef.current);
         if (!canvas) return;
@@ -89,15 +117,17 @@ function Paint(props: PaintProps) {
 
         drawAllCurvesFromStack(context, stack,
                                props.smoothness, props.thinning);
+        drawFromBuffer(context, canvas, canvasOffset, buffer);
     }, [canvas]);
 
     useEffect(() => {
         setIsStackEmpty(stack.length == 0);
         if (!isLocalStorageAvailable() || stack.length == 0) return;
 
-        console.log('stack changed; updating local storage');
-
+        debug('stack changed; updating local storage');
         const storage = window.localStorage;
+
+        setSelfStore(true);
         storage.setItem('stack', JSON.stringify(stack));
     }, [stack]);
 
@@ -154,16 +184,6 @@ function Paint(props: PaintProps) {
         }
          */
     }, [canvas, context, isStackEmpty]);
-
-    useEffect(() => {
-        const drawLimitHandler = (limit: number) => {
-            debug('setting draw limit to ' + limit + ' ms');
-            debug('AAAAAAAAAAAAAAAAAAAAAAAAAA');
-            setLimit(limit);
-        };
-
-        SocketUtils.handleDrawLimit(drawLimitHandler);
-    }, []);
 
     useEffect(() => {
         const handshakeHandler = (data: SocketUtils.Handshake) => {
