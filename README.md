@@ -1,4 +1,4 @@
-# Collaborative Canvas
+# Project Gaia
 
 Make sure you have `yarn` installed.
 Run `yarn install` to install all dependencies.
