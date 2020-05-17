@@ -44,7 +44,7 @@ function App() {
                     'yellow',
                 ]}
                 maxStrokeLen={0}
-                rerenderAll={false} // Warning: slows down quickly when true
+                rerenderAll={true} // Warning: slows down quickly when true
             />
         </div>
     );

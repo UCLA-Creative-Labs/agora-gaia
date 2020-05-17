@@ -22,6 +22,7 @@ import {
 import {
     isLocalStorageAvailable
 } from '../utils/StorageUtils';
+import { debug } from '../utils/Utils';
 import sock, * as SocketUtils from '../utils/SocketUtils';
 
 import './styles/Paint.scss';
@@ -37,10 +38,13 @@ function Paint(props: PaintProps) {
 
     const [ context, setContext ] = useState<CanvasRenderingContext2D>(null);
     const [ stack, setStack ] = useState<CoordPath[]>([]);
+    const [ handshake, setHandshake ] = useState<SocketUtils.Handshake>({last_send: null, can_undo: false});
+    const [ limit, setLimit] = useState(120000);
     const popStack = () => { setStack(prevStack => prevStack.slice(0,-1)); };
     const [ isStackEmpty, setIsStackEmpty ] = useState(true);
     const [ cannotDraw, setCannotDraw ] = useState<boolean>(props.cannotDraw);
     const toggleCannotDraw = () => { setCannotDraw(!cannotDraw); }
+    const [ canToggle, setCanToggle ] = useState(true);
 
     const canvasRef = useCallback(ref => { if (ref !== null) { setCanvas(ref); } }, [setCanvas]);
 
@@ -78,6 +82,8 @@ function Paint(props: PaintProps) {
         buffer.width = props.maxWidth;
         buffer.height = props.maxHeight;
 
+        debug('rerendering canvas');
+
         drawAllCurvesFromStack(context, stack,
                                props.smoothness, props.thinning);
     }, [canvas]);
@@ -86,6 +92,8 @@ function Paint(props: PaintProps) {
         setIsStackEmpty(stack.length == 0);
         if (!isLocalStorageAvailable() || stack.length == 0) return;
 
+        console.log('stack changed; updating local storage');
+
         const storage = window.localStorage;
         storage.setItem('stack', JSON.stringify(stack));
     }, [stack]);
@@ -93,6 +101,7 @@ function Paint(props: PaintProps) {
     useEffect(() => {
         const bufferContext = buffer.getContext('2d');
         if (!context || !bufferContext || !isStackEmpty) return;
+        debug('registering listeners');
 
         const localStack: CoordPath[] = JSON.parse(window.localStorage.getItem('stack')) || [];
         if (localStack.length > 0) {
@@ -100,7 +109,28 @@ function Paint(props: PaintProps) {
             drawAllCurvesFromStack(bufferContext, localStack, props.smoothness, props.thinning);
         }
 
+        SocketUtils.handleDrawLimit((limit: number) => {
+            setLimit(limit);
+        });
+
+        SocketUtils.handleHandshake((data: SocketUtils.Handshake) => {
+            debug('received handshake from server');
+            setHandshake(data);
+            
+            const time_diff = Date.now() - data.last_send;
+
+            if(data.last_send && time_diff < limit){
+                setCannotDraw(true);
+                setCanToggle(false);
+                setTimeout(() => {
+                    setCannotDraw(false);
+                    setCanToggle(true);
+                }, limit - time_diff)
+            }
+        })
+
         SocketUtils.handlePackage((data: CoordPath[]) => {
+            debug('received package from socket');
             const neededData = data.filter(p => !stackIncludesPath(p, localStack));
 
             setStack(prevStack => [...prevStack, ...neededData]);
@@ -111,16 +141,25 @@ function Paint(props: PaintProps) {
         });
 
         SocketUtils.handleStroke((data: CoordPath) => {
+            debug('detected stroke from server');
             setStack(prevStack => [...prevStack, data]);
             drawCurveFromCoordPath(bufferContext, data,
                 props.smoothness, props.thinning);
             drawFromBuffer(context, canvas, canvasOffset, buffer);
         });
 
+        // FOR RESETING LOCAL STORAGE MAYBE DO THIS TWICE A DAY?
+        SocketUtils.reset((data: any) => {
+            debug('resetting stack and local storage');
+            setStack([]);
+            window.localStorage.clear();
+        });
     }, [canvas, context, isStackEmpty]);
 
     const onResize = () => {
         const bufferRect = { sx: 0, sy: 0, width: buffer.width, height: buffer.height };
+
+        debug('resizing window');
 
         if (outOfBoundsX(canvasOffset.x, bufferRect))
             canvasOffset.x = bufferRect.sx - canvasOffset.x;
@@ -160,8 +199,8 @@ function Paint(props: PaintProps) {
 
                         if (cannotDraw) {
                             canvas.style.cursor = 'grabbing';
-
                             isPanning.current = true;
+                            debug('start pan');
                             return;
                         }
 
@@ -173,6 +212,7 @@ function Paint(props: PaintProps) {
                         isDrawing.current = true;
                         currentCoordPath.current.pos = [ mousePos.current ];
                         coordPathLen.current = 0;
+                        debug('start draw: ' + mousePos.current.x + ', ' + mousePos.current.y);
                     }}
                     onMouseUp = {e => {
                         // Only proceed if the left mouse is pressed and isDrawing
@@ -181,6 +221,7 @@ function Paint(props: PaintProps) {
                         if (cannotDraw) {
                             canvas.style.cursor = 'grab';
                             isPanning.current = false;
+                            debug('finished pan');
                             return;
                         }
 
@@ -189,13 +230,16 @@ function Paint(props: PaintProps) {
                         mousePos.current = { x: 0, y: 0 };
                         isDrawing.current = false;
 
+                        debug('finished draw');
                         if (currentCoordPath.current.pos.length == 0) return;
 
                         // Rerendering the whole stack is expensive, so do this only if explicitly directed.
                         if (props.rerenderAll) {
+                            debug('rerendering previous strokes');
                             bufferContext.clearRect(0, 0, buffer.width, buffer.height);
                             drawAllCurvesFromStack(bufferContext, stack, props.smoothness, props.thinning);
                         } else {
+                            debug('erasing stroke');
                             undrawLineFromCoordPath(bufferContext, currentCoordPath.current);
                         }
                         // Uncomment this and comment drawCurveFromCoordPath to redraw the exact
@@ -207,14 +251,18 @@ function Paint(props: PaintProps) {
                             width: currentCoordPath.current.width,
                             color: currentCoordPath.current.color
                         };
+                        debug('sending stroke to server');
                         SocketUtils.sendStroke(data);
+                        debug('draw curve');
                         drawCurveFromCoordPath(bufferContext, currentCoordPath.current,
                                                props.smoothness, props.thinning);
 
+                        debug('updating stack');
                         setStack(prevStack => [...prevStack, data]);
 
                         // Reset the path
                         currentCoordPath.current.pos = []
+                        debug('redrawing buffer');
                         drawFromBuffer(context, canvas, canvasOffset, buffer);
                     }}
                     onMouseMove = {e => {
@@ -295,8 +343,10 @@ function Paint(props: PaintProps) {
                     canvasOffset={canvasOffset}
                     currentCoordPath={currentCoordPath.current}
                     coordPathStack={stack}
+                    cannotDraw={cannotDraw}
+                    canToggle={canToggle}
                     paintProps={props}
-                    callbacks={[toggleCannotDraw]}
+                    toggleCannotDraw={toggleCannotDraw}
                     popStack={popStack}/>
             </div>
             <br />

@@ -1,4 +1,5 @@
 const Pool = require('pg').Pool
+
 const pool = new Pool({
   user: 'opc',
   password: 'test',
@@ -21,15 +22,26 @@ const getData = (socket) => {
   })
 }
 
-const pushData = (data) => {
-  pool.query('INSERT INTO canvas_data VALUES (now(), $1)',[data], (error, results) => {
-    if (error) {
-      throw error
+async function queueData(client_pool, buffer_time, data, socket){
+  await setTimeout(() =>{
+    if(client_pool.get(socket.handshake.address).can_undo) {
+        pushData(client_pool, data, socket);
     }
-  })
+  }, buffer_time);
+};
+
+const pushData = (client_pool, data, socket) => {
+    client_pool.get(socket.handshake.address).can_undo = false;
+    pool.query('INSERT INTO canvas_data VALUES (now(), $1)',[data], (error, results) => {
+      if (error) {
+        throw error
+      }
+      socket.broadcast.emit('stroke', data);
+    })
 }
 
 module.exports = {
   getData,
+  queueData,
   pushData,
 }
