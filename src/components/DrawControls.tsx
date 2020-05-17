@@ -5,6 +5,8 @@ import {
   CanvasProps, DrawControlProps,
   undo
 } from '../utils/PaintUtils';
+import { debug } from '../utils/Utils';
+import * as SocketUtils from '../utils/SocketUtils';
 
 import './styles/Paint.scss';
 
@@ -13,11 +15,12 @@ import ZoomInImg from '../assets/icons/add-black-18dp.svg';
 import ZoomOutImg from '../assets/icons/remove-black-18dp.svg';
 import BrushImg from '../assets/icons/brush-black-18dp.svg';
 import PanImg from '../assets/icons/pan_tool-black-18dp.svg';
-import { sendUndo, handleUndo, unregisterUndo } from '../utils/SocketUtils';
 
 function DrawControls(props: CanvasProps & DrawControlProps) {
   const [width, setWidth] = useState(props.currentCoordPath.width);
   const [drawToggleBtn, setDrawToggleBtn] = useState(PanImg);
+  const [cannotToggle, setCannotToggle] = useState(false);
+  const [undoDisabled, setUndoDisabled] = useState(true);
 
   useEffect(() => {
     if (props.cannotDraw) setDrawToggleBtn(PanImg);
@@ -25,25 +28,55 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
   }, [props.cannotDraw]);
 
     useEffect(() => {
-       handleUndo((isErased) => {
-         if (isErased) {
-               undo(props.context, props.canvas,
-                     props.bufferContext, props.buffer,
-                     props.canvasOffset,
-                     props.coordPathStack,
-                     props.popStack,
-                     props.paintProps.rerenderAll, props.paintProps.smoothness);
-               props.context.strokeStyle = props.currentCoordPath.color;
-               props.context.lineWidth = props.currentCoordPath.width;
-         } else {
-           console.log("Failed to Erase");
-         }
-       });
+        console.log(props.canToggle);
+        setCannotToggle(!props.canToggle);
+    }, [props.canToggle]);
+
+    useEffect(() => {
+        const undoHandler = (isErased: boolean) => {
+             if (isErased) {
+                   undo(props.context, props.canvas,
+                         props.bufferContext, props.buffer,
+                         props.canvasOffset,
+                         props.coordPathStack,
+                         props.popStack,
+                         props.paintProps.rerenderAll, props.paintProps.smoothness);
+                   props.context.strokeStyle = props.currentCoordPath.color;
+                   props.context.lineWidth = props.currentCoordPath.width;
+             } else {
+                 setUndoDisabled(true);
+               console.log("Failed to Erase");
+             }
+        };
+
+        debug('registering undo handler');
+       SocketUtils.handleUndo(undoHandler);
 
         return () => {
-            unregisterUndo();
+            debug('unregistering undo handler');
+            // SocketUtils.unregisterUndo(undoHandler);
+            SocketUtils.unregisterAllUndo();
         };
     }, [props]);
+
+    useEffect(() => {
+        debug('undo disabled = ' + (!props.canUndo));
+        setUndoDisabled(!props.canUndo);
+    }, [props.canUndo]);
+
+    useEffect(() => {
+        const disableUndoHandler = (disableUndo: boolean) => {
+            setUndoDisabled(disableUndo);
+        };
+
+        debug('registering disableundo handler');
+        SocketUtils.handleDisableUndo(disableUndoHandler);
+
+        return () => {
+            debug('unregistering disableundo handler');
+            SocketUtils.unregisterDisableUndo(disableUndoHandler);
+        }
+    }, []);
 
   switch (props.side) {
     case Side.Left:
@@ -80,19 +113,22 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
         <span id='draw-controls'>
           <button
             onClick={_ => {
-                sendUndo(true);
+                if (!undoDisabled) {
+                    SocketUtils.sendUndo(true);
+                    setUndoDisabled(true);
+                }
             }}
-            className='side-btn'
+            className={'side-btn' + (undoDisabled ? ' disabled' : '')}
             id='undo-btn'>
             <img src={UndoImg} style={{ 'width': '30px', 'height': '30px' }} />
           </button>
           <button
             onClick={_ => {
-              if (!props.canToggle) return;
+              if (cannotToggle) return;
 
               props.toggleCannotDraw();
             }}
-            className='side-btn'
+              className={'side-btn' + (cannotToggle ? ' disabled' : '')}
             id='brush-btn'>
             <img src={drawToggleBtn} style={{ 'width': '30px', 'height': '30px' }} />
           </button>

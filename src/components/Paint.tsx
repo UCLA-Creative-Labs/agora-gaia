@@ -39,12 +39,13 @@ function Paint(props: PaintProps) {
     const [ context, setContext ] = useState<CanvasRenderingContext2D>(null);
     const [ stack, setStack ] = useState<CoordPath[]>([]);
     const [ handshake, setHandshake ] = useState<SocketUtils.Handshake>({last_send: null, can_undo: false});
-    const [ limit, setLimit] = useState(120000);
+    const [ limit, setLimit ] = useState(0);
     const popStack = () => { setStack(prevStack => prevStack.slice(0,-1)); };
     const [ isStackEmpty, setIsStackEmpty ] = useState(true);
     const [ cannotDraw, setCannotDraw ] = useState<boolean>(props.cannotDraw);
     const toggleCannotDraw = () => { setCannotDraw(!cannotDraw); }
     const [ canToggle, setCanToggle ] = useState(true);
+    const [ canUndo, setCanUndo ] = useState(false);
 
     const canvasRef = useCallback(ref => { if (ref !== null) { setCanvas(ref); } }, [setCanvas]);
 
@@ -109,27 +110,12 @@ function Paint(props: PaintProps) {
             drawAllCurvesFromStack(bufferContext, localStack, props.smoothness, props.thinning);
         }
 
-        SocketUtils.handleDrawLimit((limit: number) => {
+        const drawLimitHandler = (limit: number) => {
+            debug('setting draw limit to ' + limit + ' ms');
             setLimit(limit);
-        });
+        };
 
-        SocketUtils.handleHandshake((data: SocketUtils.Handshake) => {
-            debug('received handshake from server');
-            setHandshake(data);
-            
-            const time_diff = Date.now() - data.last_send;
-
-            if(data.last_send && time_diff < limit){
-                setCannotDraw(true);
-                setCanToggle(false);
-                setTimeout(() => {
-                    setCannotDraw(false);
-                    setCanToggle(true);
-                }, limit - time_diff)
-            }
-        })
-
-        SocketUtils.handlePackage((data: CoordPath[]) => {
+        const packageHandler = (data: CoordPath[]) => {
             debug('received package from socket');
             const neededData = data.filter(p => !stackIncludesPath(p, localStack));
 
@@ -138,23 +124,69 @@ function Paint(props: PaintProps) {
             drawAllCurvesFromStack(bufferContext, neededData,
                 props.smoothness, props.thinning);
             drawFromBuffer(context, canvas, canvasOffset, buffer);
-        });
+        };
 
-        SocketUtils.handleStroke((data: CoordPath) => {
+        const strokeHandler = (data: CoordPath) => {
             debug('detected stroke from server');
             setStack(prevStack => [...prevStack, data]);
             drawCurveFromCoordPath(bufferContext, data,
                 props.smoothness, props.thinning);
             drawFromBuffer(context, canvas, canvasOffset, buffer);
-        });
+        };
 
-        // FOR RESETING LOCAL STORAGE MAYBE DO THIS TWICE A DAY?
-        SocketUtils.reset((data: any) => {
+        const resetHandler = (data: any) => {
             debug('resetting stack and local storage');
             setStack([]);
             window.localStorage.clear();
-        });
+        };
+
+        SocketUtils.handleDrawLimit(drawLimitHandler);
+        SocketUtils.handlePackage(packageHandler);
+        SocketUtils.handleStroke(strokeHandler);
+
+        // FOR RESETING LOCAL STORAGE MAYBE DO THIS TWICE A DAY?
+        SocketUtils.reset(resetHandler);
+
+        /* TODO: find out why this gets called immediately
+        return () => {
+            debug('unregistering listeners');
+            // SocketUtils.unregisterDrawLimit(drawLimitHandler);
+            // SocketUtils.unregisterHandshake(handshakeHandler);
+            // SocketUtils.unregisterPackage(packageHandler);
+            // SocketUtils.unregisterStroke(strokeHandler);
+            // SocketUtils.unregisterReset(resetHandler);
+        }
+         */
     }, [canvas, context, isStackEmpty]);
+
+    useEffect(() => {
+        debug('limit state: ' + limit);
+        const handshakeHandler = (data: SocketUtils.Handshake) => {
+            debug('received handshake from server');
+            setHandshake(data);
+
+            const time_diff = Date.now() - data.last_send;
+            debug('time difference: ' + time_diff);
+
+            if(data.last_send && time_diff < limit){
+                console.log('remaining time: ' + (limit - time_diff));
+                setCannotDraw(true);
+                setCanToggle(false);
+                setTimeout(() => {
+                    setCannotDraw(false);
+                    setCanToggle(true);
+                }, limit - time_diff)
+            }
+        };
+
+        debug('registering handshake listener');
+        SocketUtils.handleHandshake(handshakeHandler)
+
+        return () => {
+            debug('unregistering handshake listener');
+            SocketUtils.unregisterHandshake(handshakeHandler);
+        }
+    }, [limit]);
 
     const onResize = () => {
         const bufferRect = { sx: 0, sy: 0, width: buffer.width, height: buffer.height };
@@ -213,6 +245,7 @@ function Paint(props: PaintProps) {
                         currentCoordPath.current.pos = [ mousePos.current ];
                         coordPathLen.current = 0;
                         debug('start draw: ' + mousePos.current.x + ', ' + mousePos.current.y);
+                        setCanUndo(false);
                     }}
                     onMouseUp = {e => {
                         // Only proceed if the left mouse is pressed and isDrawing
@@ -253,6 +286,7 @@ function Paint(props: PaintProps) {
                         };
                         debug('sending stroke to server');
                         SocketUtils.sendStroke(data);
+                        setCanUndo(true);
                         debug('draw curve');
                         drawCurveFromCoordPath(bufferContext, currentCoordPath.current,
                                                props.smoothness, props.thinning);
@@ -345,6 +379,7 @@ function Paint(props: PaintProps) {
                     coordPathStack={stack}
                     cannotDraw={cannotDraw}
                     canToggle={canToggle}
+                    canUndo={canUndo}
                     paintProps={props}
                     toggleCannotDraw={toggleCannotDraw}
                     popStack={popStack}/>

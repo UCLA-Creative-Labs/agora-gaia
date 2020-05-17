@@ -50,7 +50,8 @@ export enum Side {
 export interface DrawControlProps {
     side: Side,
     toggleCannotDraw?: () => void,
-    canToggle?: boolean
+    canToggle?: boolean,
+    canUndo?: boolean
 }
 
 export function drawLine(context: CanvasRenderingContext2D,

@@ -96,3 +96,17 @@ button {
 .color-btn.selected {
     transform: scale(1.3);
 }
+
+.disabled {
+    transform: scale(0.9);
+    filter: brightness(0.8);
+}
+
+.disabled:hover {
+    transform: scale(0.9);
+    filter: brightness(0.8);
+}
+
+.disabled:active {
+    transform: scale(0.9);
+}

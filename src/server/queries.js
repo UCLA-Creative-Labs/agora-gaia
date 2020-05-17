@@ -37,6 +37,7 @@ const pushData = (client_pool, data, socket) => {
         throw error
       }
       socket.broadcast.emit('stroke', data);
+        socket.emit('disableundo', true);
     })
 }
 
