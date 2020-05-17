@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback, useLayoutEffect } from
 
 import ColorButtons from './ColorButtons';
 import DrawControls from './DrawControls';
+import Timer        from './Timer';
 
 import {
     PaintProps,
@@ -39,12 +40,15 @@ function Paint(props: PaintProps) {
     const [ context, setContext ] = useState<CanvasRenderingContext2D>(null);
     const [ stack, setStack ] = useState<CoordPath[]>([]);
     const [ handshake, setHandshake ] = useState<SocketUtils.Handshake>({last_send: null, can_undo: false});
-    const [ limit, setLimit] = useState(120000);
+    const [ limit, setLimit ] = useState(Number.MAX_SAFE_INTEGER);
     const popStack = () => { setStack(prevStack => prevStack.slice(0,-1)); };
     const [ isStackEmpty, setIsStackEmpty ] = useState(true);
     const [ cannotDraw, setCannotDraw ] = useState<boolean>(props.cannotDraw);
     const toggleCannotDraw = () => { setCannotDraw(!cannotDraw); }
     const [ canToggle, setCanToggle ] = useState(true);
+    const [ canUndo, setCanUndo ] = useState(false);
+    const [ lastSend, setLastSend ] = useState(0);
+    const [ selfStore, setSelfStore ] = useState(false);
 
     const canvasRef = useCallback(ref => { if (ref !== null) { setCanvas(ref); } }, [setCanvas]);
 
@@ -73,6 +77,33 @@ function Paint(props: PaintProps) {
     // If the element doesn't have a colors property, default to black + RGB
     const colors: string[] = props.colors || [ 'black', 'red', 'green', 'blue' ]
 
+    const storageHandler = (e: StorageEvent) => {
+        if (e.key == 'stack' && !selfStore) {
+            debug('different instance wrote to local storage; locking');
+            setSelfStore(false);
+            // setStack(JSON.parse(e.newValue) || []);
+            setCannotDraw(true);
+            setCanUndo(false);
+            setCanToggle(false);
+        }
+    };
+
+    // Called only on component mount
+    useEffect(() => {
+        const drawLimitHandler = (limit: number) => {
+            debug('setting draw limit to ' + limit + ' ms');
+            setLimit(limit);
+        };
+
+        SocketUtils.handleDrawLimit(drawLimitHandler);
+
+        window.addEventListener('storage', storageHandler);
+
+        return () => {
+            window.removeEventListener('storage', storageHandler);
+        }
+    }, []);
+
     useEffect(() => {
         // setCanvas(canvasRef.current);
         if (!canvas) return;
@@ -86,15 +117,17 @@ function Paint(props: PaintProps) {
 
         drawAllCurvesFromStack(context, stack,
                                props.smoothness, props.thinning);
+        drawFromBuffer(context, canvas, canvasOffset, buffer);
     }, [canvas]);
 
     useEffect(() => {
         setIsStackEmpty(stack.length == 0);
         if (!isLocalStorageAvailable() || stack.length == 0) return;
 
-        console.log('stack changed; updating local storage');
-
+        debug('stack changed; updating local storage');
         const storage = window.localStorage;
+
+        setSelfStore(true);
         storage.setItem('stack', JSON.stringify(stack));
     }, [stack]);
 
@@ -109,27 +142,7 @@ function Paint(props: PaintProps) {
             drawAllCurvesFromStack(bufferContext, localStack, props.smoothness, props.thinning);
         }
 
-        SocketUtils.handleDrawLimit((limit: number) => {
-            setLimit(limit);
-        });
-
-        SocketUtils.handleHandshake((data: SocketUtils.Handshake) => {
-            debug('received handshake from server');
-            setHandshake(data);
-            
-            const time_diff = Date.now() - data.last_send;
-
-            if(data.last_send && time_diff < limit){
-                setCannotDraw(true);
-                setCanToggle(false);
-                setTimeout(() => {
-                    setCannotDraw(false);
-                    setCanToggle(true);
-                }, limit - time_diff)
-            }
-        })
-
-        SocketUtils.handlePackage((data: CoordPath[]) => {
+        const packageHandler = (data: CoordPath[]) => {
             debug('received package from socket');
             const neededData = data.filter(p => !stackIncludesPath(p, localStack));
 
@@ -138,23 +151,72 @@ function Paint(props: PaintProps) {
             drawAllCurvesFromStack(bufferContext, neededData,
                 props.smoothness, props.thinning);
             drawFromBuffer(context, canvas, canvasOffset, buffer);
-        });
+        };
 
-        SocketUtils.handleStroke((data: CoordPath) => {
+        const strokeHandler = (data: CoordPath) => {
             debug('detected stroke from server');
             setStack(prevStack => [...prevStack, data]);
             drawCurveFromCoordPath(bufferContext, data,
                 props.smoothness, props.thinning);
             drawFromBuffer(context, canvas, canvasOffset, buffer);
-        });
+        };
 
-        // FOR RESETING LOCAL STORAGE MAYBE DO THIS TWICE A DAY?
-        SocketUtils.reset((data: any) => {
+        const resetHandler = (data: any) => {
             debug('resetting stack and local storage');
             setStack([]);
             window.localStorage.clear();
-        });
+        };
+
+        SocketUtils.handlePackage(packageHandler);
+        SocketUtils.handleStroke(strokeHandler);
+
+        // FOR RESETING LOCAL STORAGE MAYBE DO THIS TWICE A DAY?
+        SocketUtils.reset(resetHandler);
+
+        /* TODO: find out why this gets called immediately
+        return () => {
+            debug('unregistering listeners');
+            // SocketUtils.unregisterDrawLimit(drawLimitHandler);
+            // SocketUtils.unregisterHandshake(handshakeHandler);
+            // SocketUtils.unregisterPackage(packageHandler);
+            // SocketUtils.unregisterStroke(strokeHandler);
+            // SocketUtils.unregisterReset(resetHandler);
+        }
+         */
     }, [canvas, context, isStackEmpty]);
+
+    useEffect(() => {
+        const handshakeHandler = (data: SocketUtils.Handshake) => {
+            debug('received handshake from server');
+            setHandshake(data);
+            setLastSend(data.last_send);
+        };
+
+        debug('registering handshake listener');
+        SocketUtils.handleHandshake(handshakeHandler)
+
+        return () => {
+            debug('unregistering handshake listener');
+            SocketUtils.unregisterHandshake(handshakeHandler);
+        }
+    }, [limit]);
+
+    useEffect(() => {
+        const time_diff = Date.now() - handshake.last_send;
+        debug('limit state: ' + limit);
+        debug('time difference: ' + time_diff);
+        debug('last send: ' + handshake.last_send);
+
+        if(handshake.last_send > 0 && time_diff < limit){
+            debug('remaining time: ' + (limit - time_diff));
+            setCannotDraw(true);
+            setCanToggle(false);
+            setTimeout(() => {
+                // setCannotDraw(false);
+                setCanToggle(true);
+            }, limit - time_diff)
+        }
+    }, [lastSend, handshake]);
 
     const onResize = () => {
         const bufferRect = { sx: 0, sy: 0, width: buffer.width, height: buffer.height };
@@ -188,6 +250,9 @@ function Paint(props: PaintProps) {
                 <DrawControls
                     side={Side.Left}
                     currentCoordPath={currentCoordPath.current} />
+                <Timer
+                    limit={limit}
+                    lastSend={lastSend} />
                 <canvas
                     width={props.width}
                     height={props.height}
@@ -213,6 +278,7 @@ function Paint(props: PaintProps) {
                         currentCoordPath.current.pos = [ mousePos.current ];
                         coordPathLen.current = 0;
                         debug('start draw: ' + mousePos.current.x + ', ' + mousePos.current.y);
+                        setCanUndo(false);
                     }}
                     onMouseUp = {e => {
                         // Only proceed if the left mouse is pressed and isDrawing
@@ -253,6 +319,7 @@ function Paint(props: PaintProps) {
                         };
                         debug('sending stroke to server');
                         SocketUtils.sendStroke(data);
+                        setCanUndo(true);
                         debug('draw curve');
                         drawCurveFromCoordPath(bufferContext, currentCoordPath.current,
                                                props.smoothness, props.thinning);
@@ -345,6 +412,7 @@ function Paint(props: PaintProps) {
                     coordPathStack={stack}
                     cannotDraw={cannotDraw}
                     canToggle={canToggle}
+                    canUndo={canUndo}
                     paintProps={props}
                     toggleCannotDraw={toggleCannotDraw}
                     popStack={popStack}/>

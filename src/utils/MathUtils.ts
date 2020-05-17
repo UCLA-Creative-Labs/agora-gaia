@@ -28,3 +28,11 @@ export function rectOutOfBoundsY(rect: Rect, bounds: Rect): boolean {
     return outOfBoundsY(rect.sy, bounds)
             || outOfBoundsY(rect.sy + rect.height, bounds);
 }
+
+export function millisToMinSec(millis: number): string {
+    const min = Math.floor(millis / 60000);
+    const sec = Math.floor(millis / 1000) % 60 - min + 1;
+    const minStr = min.toString().padStart(2, '0');
+    const secStr = sec.toString().padStart(2, '0');
+    return `${minStr}:${secStr}`;
+}
