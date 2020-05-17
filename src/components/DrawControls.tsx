@@ -13,7 +13,7 @@ import ZoomInImg from '../assets/icons/add-black-18dp.svg';
 import ZoomOutImg from '../assets/icons/remove-black-18dp.svg';
 import BrushImg from '../assets/icons/brush-black-18dp.svg';
 import PanImg from '../assets/icons/pan_tool-black-18dp.svg';
-import { sendUndo, handleUndo } from '../utils/SocketUtils';
+import { sendUndo, handleUndo, unregisterUndo } from '../utils/SocketUtils';
 
 function DrawControls(props: CanvasProps & DrawControlProps) {
   const [width, setWidth] = useState(props.currentCoordPath.width);
@@ -23,6 +23,27 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
     if (props.cannotDraw) setDrawToggleBtn(PanImg);
     else setDrawToggleBtn(BrushImg);
   }, [props.cannotDraw]);
+
+    useEffect(() => {
+       handleUndo((isErased) => {
+         if (isErased) {
+               undo(props.context, props.canvas,
+                     props.bufferContext, props.buffer,
+                     props.canvasOffset,
+                     props.coordPathStack,
+                     props.popStack,
+                     props.paintProps.rerenderAll, props.paintProps.smoothness);
+               props.context.strokeStyle = props.currentCoordPath.color;
+               props.context.lineWidth = props.currentCoordPath.width;
+         } else {
+           console.log("Failed to Erase");
+         }
+       });
+
+        return () => {
+            unregisterUndo();
+        };
+    }, [props]);
 
   switch (props.side) {
     case Side.Left:
@@ -59,21 +80,7 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
         <span id='draw-controls'>
           <button
             onClick={_ => {
-              sendUndo(true);
-              handleUndo((isErased) => {
-                if (isErased) {
-                  undo(props.context, props.canvas,
-                    props.bufferContext, props.buffer,
-                    props.canvasOffset,
-                    props.coordPathStack,
-                    props.popStack,
-                    props.paintProps.rerenderAll, props.paintProps.smoothness);
-                  props.context.strokeStyle = props.currentCoordPath.color;
-                  props.context.lineWidth = props.currentCoordPath.width;
-                }else{
-                  console.log("Failed to Erase");
-                }
-              });
+                sendUndo(true);
             }}
             className='side-btn'
             id='undo-btn'>

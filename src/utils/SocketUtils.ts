@@ -8,16 +8,32 @@ export function handleHandshake(callback: (data: any) => any) {
     socket.on('handshake', callback);
 }
 
+export function unregisterHandshake() {
+    socket.off('handshake');
+}
+
 export function handlePackage(callback: (data: CoordPath[]) => any) {
     socket.on('package', callback);
+}
+
+export function unregisterPackage() {
+    socket.off('package');
 }
 
 export function handleStroke(callback: (data: CoordPath) => any) {
     socket.on('stroke', callback);
 }
 
+export function unregisterStroke() {
+    socket.off('stroke');
+}
+
 export function reset(callback: (data: any) => any){
     socket.on('reset', callback);
+}
+
+export function unregisterReset() {
+    socket.off('reset');
 }
 
 export function handleUndo(callback: (isErased: boolean) => any){
@@ -28,6 +44,10 @@ export function handleDrawLimit(callback: (limit: number) => any){
     socket.on('limit', callback);
 }
 
+
+export function unregisterUndo() {
+    socket.off('erase');
+}
 
 export function sendStroke(stroke: CoordPath) {
     socket.emit('update', stroke);
