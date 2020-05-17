@@ -11,6 +11,8 @@ Run `yarn install` to install all dependencies.
 ## To-Do
 
 * Make sure routing works properly in prod.
+* Only send strokes from database whose timestamps are newer than the latest-cached stroke for the client.
+* Add moderation capabilities.
 * Load balancing time!
 
 ## Known bugs
