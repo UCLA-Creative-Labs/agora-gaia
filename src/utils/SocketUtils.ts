@@ -24,6 +24,11 @@ export function handleUndo(callback: (isErased: boolean) => any){
     socket.on('erase', callback);
 }
 
+export function handleDrawLimit(callback: (limit: number) => any){
+    socket.on('limit', callback);
+}
+
+
 export function sendStroke(stroke: CoordPath) {
     socket.emit('update', stroke);
 }
