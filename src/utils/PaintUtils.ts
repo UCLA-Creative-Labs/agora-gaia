@@ -54,6 +54,11 @@ export interface DrawControlProps {
     canUndo?: boolean
 }
 
+export interface TimerProps {
+    limit: number,
+    lastSend: number
+}
+
 export function drawLine(context: CanvasRenderingContext2D,
                          start: Coord, end: Coord,
                          lineWidth: number) {

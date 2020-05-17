@@ -12,6 +12,10 @@ export function unregisterHandshake(callback: (data: Handshake) => any) {
     socket.off('handshake', callback);
 }
 
+export function unregisterAllHandshake() {
+    socket.off('handshake');
+}
+
 export function handlePackage(callback: (data: CoordPath[]) => any) {
     socket.on('package', callback);
 }

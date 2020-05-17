@@ -49,11 +49,12 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
              }
         };
 
-        debug('registering undo handler');
+        // clutters log
+        // debug('registering undo handler');
        SocketUtils.handleUndo(undoHandler);
 
         return () => {
-            debug('unregistering undo handler');
+            // debug('unregistering undo handler');
             // SocketUtils.unregisterUndo(undoHandler);
             SocketUtils.unregisterAllUndo();
         };
@@ -84,7 +85,7 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
         <span id='draw-controls'>
           <button
             onClick={_ => {
-              if (props.currentCoordPath.width <= 12) {
+              if (props.currentCoordPath.width < 15) {
                 props.currentCoordPath.width += 1;
                 setWidth(prev => prev + 1);
               }
@@ -93,7 +94,7 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
             id='zoomin-btn'>
             <img src={ZoomInImg} style={{ 'width': '30px', 'height': '30px' }} />
           </button>
-          <p>{width}</p>
+          <p id='width-disp'>{width}</p>
           <button
             onClick={_ => {
               if (props.currentCoordPath.width > 1) {

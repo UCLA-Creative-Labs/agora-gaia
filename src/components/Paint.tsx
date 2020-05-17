@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback, useLayoutEffect } from
 
 import ColorButtons from './ColorButtons';
 import DrawControls from './DrawControls';
+import Timer        from './Timer';
 
 import {
     PaintProps,
@@ -46,6 +47,7 @@ function Paint(props: PaintProps) {
     const toggleCannotDraw = () => { setCannotDraw(!cannotDraw); }
     const [ canToggle, setCanToggle ] = useState(true);
     const [ canUndo, setCanUndo ] = useState(false);
+    const [ lastSend, setLastSend ] = useState(0);
 
     const canvasRef = useCallback(ref => { if (ref !== null) { setCanvas(ref); } }, [setCanvas]);
 
@@ -160,23 +162,10 @@ function Paint(props: PaintProps) {
     }, [canvas, context, isStackEmpty]);
 
     useEffect(() => {
-        debug('limit state: ' + limit);
         const handshakeHandler = (data: SocketUtils.Handshake) => {
             debug('received handshake from server');
             setHandshake(data);
-
-            const time_diff = Date.now() - data.last_send;
-            debug('time difference: ' + time_diff);
-
-            if(data.last_send && time_diff < limit){
-                console.log('remaining time: ' + (limit - time_diff));
-                setCannotDraw(true);
-                setCanToggle(false);
-                setTimeout(() => {
-                    setCannotDraw(false);
-                    setCanToggle(true);
-                }, limit - time_diff)
-            }
+            setLastSend(data.last_send);
         };
 
         debug('registering handshake listener');
@@ -187,6 +176,23 @@ function Paint(props: PaintProps) {
             SocketUtils.unregisterHandshake(handshakeHandler);
         }
     }, [limit]);
+
+    useEffect(() => {
+        const time_diff = Date.now() - handshake.last_send;
+        debug('limit state: ' + limit);
+        debug('time difference: ' + time_diff);
+        debug('last send: ' + handshake.last_send);
+
+        if(handshake.last_send > 0 && time_diff < limit){
+            debug('remaining time: ' + (limit - time_diff));
+            setCannotDraw(true);
+            setCanToggle(false);
+            setTimeout(() => {
+                // setCannotDraw(false);
+                setCanToggle(true);
+            }, limit - time_diff)
+        }
+    }, [lastSend, handshake]);
 
     const onResize = () => {
         const bufferRect = { sx: 0, sy: 0, width: buffer.width, height: buffer.height };
@@ -220,6 +226,9 @@ function Paint(props: PaintProps) {
                 <DrawControls
                     side={Side.Left}
                     currentCoordPath={currentCoordPath.current} />
+                <Timer
+                    limit={limit}
+                    lastSend={lastSend} />
                 <canvas
                     width={props.width}
                     height={props.height}

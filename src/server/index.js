@@ -14,7 +14,7 @@ let client_pool = new Map();
 var buffer_time_sec = 10;
 var buffer_time     = buffer_time_sec * 1000; 
 
-var draw_limit_sec = 15;
+var draw_limit_sec = 120;
 var draw_limit     = draw_limit_sec * 1000;
 
 const send_handshake = (socket) =>{

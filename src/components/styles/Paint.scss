@@ -99,6 +99,7 @@ button {
 
 .disabled {
     transform: scale(0.9);
+    transition: 0.2s;
     filter: brightness(0.8);
 }
 
@@ -109,4 +110,29 @@ button {
 
 .disabled:active {
     transform: scale(0.9);
+}
+
+#timer {
+    position: absolute;
+    left: 50%;
+    padding-left: 40px;
+    padding-right: 40px;
+    transform: translateX(-50%);
+    padding-top: 10px;
+    padding-bottom: 10px;
+    margin-top: -10px;
+    border: 0px;
+    border-radius: 0px 0px 10px 10px;
+    background: white;
+    box-shadow: 0px 2px 8px rgba(0,0,0,0.6);
+    font-size: 1.2em;
+    transition: 0.3s;
+}
+
+#timer.hidden {
+    margin-top: -100px;
+}
+
+#timer.shown {
+    margin-top: -10px;
 }
