@@ -95,6 +95,7 @@ function Paint(props: PaintProps) {
     useEffect(() => {
         const bufferContext = buffer.getContext('2d');
         if (!context || !bufferContext || !isStackEmpty) return;
+        console.log('hello');
 
         const localStack: CoordPath[] = JSON.parse(window.localStorage.getItem('stack')) || [];
         if (localStack.length > 0) {
@@ -105,7 +106,7 @@ function Paint(props: PaintProps) {
         SocketUtils.handleHandshake((data: SocketUtils.Handshake) => {
             setHandshake(data);
             
-            const draw_limit_min = 2;
+            const draw_limit_min = .1;
             const draw_limit = draw_limit_min * 60 * 1000;
             const time_diff = Date.now() - data.last_send;
 
@@ -139,12 +140,8 @@ function Paint(props: PaintProps) {
         // FOR RESETING LOCAL STORAGE MAYBE DO THIS TWICE A DAY?
         SocketUtils.reset((data: any) => {
             setStack([]);
-            if (!isLocalStorageAvailable()) return;
-            const storage = window.localStorage;
-            storage.setItem('stack', JSON.stringify([]));
-            console.log(storage);
-        })
-
+            window.localStorage.clear();
+        });
     }, [canvas, context, isStackEmpty]);
 
     const onResize = () => {

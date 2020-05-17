@@ -24,8 +24,9 @@ const getData = (socket) => {
 
 async function queueData(client_pool, buffer_time, data, socket){
   await setTimeout(() =>{
-    if(client_pool.get(socket.handshake.address).can_undo)
-      pushData(client_pool, data, socket)
+    if(client_pool.get(socket.handshake.address).can_undo) {
+        pushData(client_pool, data, socket);
+    }
   }, buffer_time);
 };
 

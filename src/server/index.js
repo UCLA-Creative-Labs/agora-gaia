@@ -19,7 +19,7 @@ const send_handshake = (socket) =>{
   socket.emit('handshake', client_pool.get(socket.handshake.address))
 };
 
-let dev_reset = true;
+let dev_reset = false;
 
 io.on("connection", (socket) => {
   
@@ -41,12 +41,14 @@ io.on("connection", (socket) => {
 
   socket.on("undo", (data) => {
     let erased;
+
     if(client_pool.get(socket.handshake.address).can_undo){
       client_pool.get(socket.handshake.address).can_undo = false;
       erased = true;
     }else{
       erased = false;
     }
+
     socket.emit('erase', erased);
   });
 
