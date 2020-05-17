@@ -4,19 +4,19 @@ Make sure you have `yarn` installed.
 Run `yarn install` to install all dependencies.
 
 ## Instructions on usage
-**To develop:** Run `yarn start` to start a local development server at http://localhost:8080. Add `--host=0.0.0.0` if you want to test the webpage on your phone.
+**To develop:** Run `yarn dev` to start a local development server at http://localhost:8080. Note that you will have to have a local PostgreSQL instance running for this website to function correctly. TODO
 
-**To build:** Run `yarn build` to generate build versions of the website in the `dist/` folder, then open `dist/index.html` to open the website.
+**To build:** Run `yarn build` to generate build versions of the website in the `dist/` folder, and run `yarn server` to start a server locally. Then open `dist/index.html` to open the website.
 
 ## To-Do
 
-* Add zooming and/or panning.
-* Note: Right now, I'm using `useRef` for everything related to the canvas (current path, path stack, etc.), because I figured using `useState` and `useEffect` would make the canvas re-render on every update, like drawing a new stroke, changing stroke width, etc., which seems inefficient especially if we want to make sure this scales well. But `useState` and `useEffect` are more idiomatic React and would allow us to update stuff on the DOM (like a `<p>` tag with tracking the stroke width), so will need to look into this more.
+* Make sure routing works properly in prod.
+* Load balancing time!
 
 ## Known bugs
 
-* Doesn't support touchscreens yet.
 * Paths are unantialiased. Not too big a deal, but it can be a little frustrating.
+* Not a bug per se (or at least not one we'll fix), but if a user tries to open multiple windows to draw on one computer, they will be in for a confusing time.
 
 ## Server Base Architecture - Bryan
 
