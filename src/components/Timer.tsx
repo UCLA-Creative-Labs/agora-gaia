@@ -8,6 +8,8 @@ import {
 import { millisToMinSec } from '../utils/MathUtils';
 import { debug } from '../utils/Utils';
 
+const UPPER_THRESHOLD = 10 * 60 * 1000;
+
 function Timer(props: TimerProps) {
     const [ waitTime, setWaitTime ] = useState(0);
     const [ timerVisible, setTimerVisible ] = useState(false);
@@ -24,7 +26,8 @@ function Timer(props: TimerProps) {
     }, [props.limit, props.lastSend]);
 
     useEffect(() => {
-        if (waitTime > 0) setTimerVisible(true);
+        if (waitTime > 0 && waitTime < Number.MAX_SAFE_INTEGER - UPPER_THRESHOLD)
+            setTimerVisible(true);
         else setTimerVisible(false);
     }, [waitTime]);
 
