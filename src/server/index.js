@@ -14,8 +14,8 @@ let client_pool = new Map();
 var buffer_time_sec = 10;
 var buffer_time     = buffer_time_sec * 1000; 
 
-var draw_limit_min = 2;
-var draw_limit     = draw_limit_min * 60 * 1000;
+var draw_limit_sec = 120;
+var draw_limit     = draw_limit_sec * 1000;
 
 const send_handshake = (socket) =>{
   client_pool.set(socket.handshake.address, {'last_send': Date.now(), 'can_undo': true});
