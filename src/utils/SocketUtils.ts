@@ -7,8 +7,6 @@ import { debug } from './Utils';
 const socket = process.env.NODE_ENV === 'production'
                 ? io(process.env.REACT_APP_SOCKET_SERVER)
                 : io({path: '/socket'});
-console.log(process.env.NODE_ENV);
-console.log(process.env.REACT_APP_SOCKET_SERVER);
 
 socket.emit('init', getTimestampFromStorage());
 
