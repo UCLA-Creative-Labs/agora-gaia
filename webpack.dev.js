@@ -35,10 +35,6 @@ module.exports = merge(common, {
         hot: true,
         port: 8080,
         proxy: {
-            '/api': {
-                target: "http://localhost:3000",
-                pathRewrite: {'^/api': ''}
-            },
             '/socket/*': {
                 target: "http://localhost:3000/socket.io",
                 pathRewrite: {'^/socket': ''},

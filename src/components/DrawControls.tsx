@@ -28,7 +28,6 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
   }, [props.cannotDraw]);
 
     useEffect(() => {
-        console.log(props.canToggle);
         setCannotToggle(!props.canToggle);
     }, [props.canToggle]);
 
@@ -45,7 +44,6 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
                    props.context.lineWidth = props.currentCoordPath.width;
              } else {
                  setUndoDisabled(true);
-               console.log("Failed to Erase");
              }
         };
 
