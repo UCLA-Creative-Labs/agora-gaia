@@ -1,3 +1,6 @@
+// Checks if storage is available (either local or session). Defaults to
+// false if the storage type is unknown.
+//
 // Adapted from https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API/Using_the_Web_Storage_API
 function isStorageAvailable(type: string): boolean {
     let storage;
@@ -22,10 +25,12 @@ function isStorageAvailable(type: string): boolean {
     }
 }
 
+// Check if local storage specifically is available.
 export function isLocalStorageAvailable(): boolean {
    return isStorageAvailable('local');
 }
 
+// Check if session storage specifically is available (unused).
 export function isSessionStorageAvailable(): boolean {
    return isStorageAvailable('session');
 }

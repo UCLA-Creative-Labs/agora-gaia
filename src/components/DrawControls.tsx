@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Side,
   CanvasProps, DrawControlProps,
-  undo
+  undo, drawFromBuffer
 } from '../utils/PaintUtils';
 import { debug } from '../utils/Utils';
 import * as SocketUtils from '../utils/SocketUtils';
@@ -16,12 +16,17 @@ import ZoomOutImg from '../assets/icons/remove-black-18dp.svg';
 import BrushImg from '../assets/icons/brush-black-18dp.svg';
 import PanImg from '../assets/icons/pan_tool-black-18dp.svg';
 
+// Component to hold draw control buttons. On the left are buttons to control
+// the width of the user's stroke; on the right are buttons to undo or to toggle
+// between drawing and panning.
 function DrawControls(props: CanvasProps & DrawControlProps) {
   const [width, setWidth] = useState(props.currentCoordPath.width);
   const [drawToggleBtn, setDrawToggleBtn] = useState(PanImg);
   const [cannotToggle, setCannotToggle] = useState(false);
   const [undoDisabled, setUndoDisabled] = useState(true);
 
+  // Set the image in the toggle button according to whether or not the user can
+  // draw.
   useEffect(() => {
     if (props.cannotDraw) setDrawToggleBtn(PanImg);
     else setDrawToggleBtn(BrushImg);
@@ -31,17 +36,21 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
         setCannotToggle(!props.canToggle);
     }, [props.canToggle]);
 
+    // Register a handler to receive an undo event. If the event allows for
+    // an undo, go ahead and do it. Otherwise, disable the undo button.
     useEffect(() => {
         const undoHandler = (isErased: boolean) => {
              if (isErased) {
-                   undo(props.context, props.canvas,
-                         props.bufferContext, props.buffer,
-                         props.canvasOffset,
+                   undo(props.bufferContext, props.buffer,
                          props.coordPathStack,
                          props.popStack,
-                         props.paintProps.rerenderAll, props.paintProps.smoothness);
+                         props.paintProps.rerenderAll,
+                         props.paintProps.smoothness);
                    props.context.strokeStyle = props.currentCoordPath.color;
                    props.context.lineWidth = props.currentCoordPath.width;
+                   props.popStack();
+                   drawFromBuffer(props.context, props.canvas,
+                                  props.canvasOffset, props.buffer);
              } else {
                  setUndoDisabled(true);
              }
@@ -49,7 +58,7 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
 
         // clutters log
         // debug('registering undo handler');
-       SocketUtils.handleUndo(undoHandler);
+       SocketUtils.registerUndo(undoHandler);
 
         return () => {
             // debug('unregistering undo handler');
@@ -58,18 +67,21 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
         };
     }, [props]);
 
+    // Disable undo if the corresponding property is modified
     useEffect(() => {
         debug('undo disabled = ' + (!props.canUndo));
         setUndoDisabled(!props.canUndo);
     }, [props.canUndo]);
 
+    // Register a handler which disables the undo button if such an
+    // event is received from the server.
     useEffect(() => {
         const disableUndoHandler = (disableUndo: boolean) => {
             setUndoDisabled(disableUndo);
         };
 
         debug('registering disableundo handler');
-        SocketUtils.handleDisableUndo(disableUndoHandler);
+        SocketUtils.registerDisableUndo(disableUndoHandler);
 
         return () => {
             debug('unregistering disableundo handler');
@@ -77,6 +89,7 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
         }
     }, []);
 
+    // Display a particular set of buttons based on the side this component is on.
   switch (props.side) {
     case Side.Left:
       return (

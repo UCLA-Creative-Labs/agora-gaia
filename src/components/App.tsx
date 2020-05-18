@@ -6,13 +6,13 @@ import { useWindowSize } from '../utils/Hooks';
 
 import './styles/App.scss';
 
+// Wrapper for the entire window. Used to define global properties and settings.
 function App() {
     const size = useWindowSize();
     const maxWidth = 3840;
     const maxHeight = 2160;
     const canvasWidth = Math.min(0.8 * size.width, maxWidth);
     const canvasHeight = Math.min(0.85 * size.height, maxHeight);
-    let socket;
 
     return (
         <div id='app-wrapper'>

@@ -4,6 +4,8 @@ import { CanvasProps } from '../utils/PaintUtils';
 
 import './styles/Paint.scss'
 
+// Component for the various color selection buttons available to the user.
+// Color defaults to black if one is not explicitl chosen.
 function ColorButtons(props: CanvasProps) {
     const [ selectedColor, setSelectedColor ] = useState('black');
 

@@ -8,12 +8,15 @@ import {
 import { millisToMinSec } from '../utils/MathUtils';
 import { debug } from '../utils/Utils';
 
+// A threshold beyond which the displayed number is unreasonably large.
 const UPPER_THRESHOLD = 10 * 60 * 1000;
 
+// Component to hold the onscreen timer.
 function Timer(props: TimerProps) {
     const [ waitTime, setWaitTime ] = useState(0);
     const [ timerVisible, setTimerVisible ] = useState(false);
 
+    // Every tenth of a second, update the timer accordingly.
     useEffect(() => {
         debug('watching timer with limit = ' + props.limit);
         const interval = setInterval(() => {

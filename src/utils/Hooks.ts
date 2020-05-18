@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 
+// A hook to determine window size (used to calculate size of canvas)
 // Adapted from https://usehooks.com/useWindowSize/
 export function useWindowSize() {
   const isClient = typeof window === 'object';

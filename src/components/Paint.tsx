@@ -28,6 +28,8 @@ import sock, * as SocketUtils from '../utils/SocketUtils';
 
 import './styles/Paint.scss';
 
+// The big boy. The component that holds the canvas itself. Will finish commenting this thoroughly
+// later.
 function Paint(props: PaintProps) {
     // State variables
     const [ canvas, setCanvas ] = useState<HTMLCanvasElement>(null);
@@ -95,7 +97,7 @@ function Paint(props: PaintProps) {
             setLimit(limit);
         };
 
-        SocketUtils.handleDrawLimit(drawLimitHandler);
+        SocketUtils.registerDrawLimit(drawLimitHandler);
 
         window.addEventListener('storage', storageHandler);
 
@@ -172,11 +174,11 @@ function Paint(props: PaintProps) {
             window.localStorage.clear();
         };
 
-        SocketUtils.handlePackage(packageHandler);
-        SocketUtils.handleStroke(strokeHandler);
+        SocketUtils.registerPackage(packageHandler);
+        SocketUtils.registerStroke(strokeHandler);
 
         // FOR RESETING LOCAL STORAGE MAYBE DO THIS TWICE A DAY?
-        SocketUtils.reset(resetHandler);
+        SocketUtils.registerReset(resetHandler);
 
         /* TODO: find out why this gets called immediately
         return () => {
@@ -198,7 +200,7 @@ function Paint(props: PaintProps) {
         };
 
         debug('registering handshake listener');
-        SocketUtils.handleHandshake(handshakeHandler)
+        SocketUtils.registerHandshake(handshakeHandler)
 
         return () => {
             debug('unregistering handshake listener');

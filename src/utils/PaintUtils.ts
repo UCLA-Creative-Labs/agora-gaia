@@ -3,6 +3,19 @@ import {
     rectOutOfBoundsX, rectOutOfBoundsY
 } from './MathUtils';
 
+// Used to differentiate between left and right.
+export enum Side {
+    Left, Right
+}
+
+// Interface describing an on-screen path in terms of the coordinates which
+// lie on it.
+export interface CoordPath {
+    pos: Coord[], width: number,
+    color?: string // Optional
+}
+
+
 // Interface to hold properties for this component.
 export interface PaintProps {
     width: number, height: number,
@@ -25,40 +38,40 @@ export interface PaintProps {
     rerenderAll?: boolean   // Optional (null treated as false)
 }
 
-export interface CoordPath {
-    pos: Coord[], width: number, color?: string
-}
-
+// Interface to hold properties of the whole canvas with the purpose of being
+// passed to children so all components are aware of canvas state. Could be
+// done more cleanly, but whatever.
 export interface CanvasProps {
-    context?: CanvasRenderingContext2D,
-    canvas?: HTMLCanvasElement,
-    bufferContext?: CanvasRenderingContext2D,
-    buffer?: HTMLCanvasElement,
-    canvasOffset?: Coord,
-    currentCoordPath?: CoordPath,
-    coordPathStack?: CoordPath[],
-    cannotDraw?: boolean,
-    colors?: string[],
-    paintProps?: PaintProps,
-    popStack?: () => void
+    context?: CanvasRenderingContext2D,         // The canvas context
+    canvas?: HTMLCanvasElement,                 // The canvas itself
+    bufferContext?: CanvasRenderingContext2D,   // The offscreen buffer canvas' context
+    buffer?: HTMLCanvasElement,                 // The offscreen buffer itself
+    canvasOffset?: Coord,                       // The offset of the canvas' top left corner
+                                                //  from that of the buffer canvas
+    currentCoordPath?: CoordPath,               // The path for the stroke being draw
+    coordPathStack?: CoordPath[],               // The overall stack of paths
+    cannotDraw?: boolean,                       // True if the user is to be prevented from drawing
+    colors?: string[],                          // A list of possible stroke colors
+    paintProps?: PaintProps,                    // Holds the properties of the Pain component
+    popStack?: () => void                       // A function specifically for popping the stroke stack
+                                                //  in the parent
 }
 
-export enum Side {
-    Left, Right
-}
-
+// Interface to hold properties for draw control buttons (e.g. undo, toggle).
 export interface DrawControlProps {
-    side: Side,
-    toggleCannotDraw?: () => void,
-    canToggle?: boolean,
-    canUndo?: boolean
+    side: Side,                     // The side of the canvas on which the controls are placed
+    toggleCannotDraw?: () => void,  // Toggles a state variable in the parent
+    canToggle?: boolean,            // True if the user is permitted to toggle between drawing and panning
+    canUndo?: boolean               // True if the user is allowed to undo their last stroke
 }
 
+// Interface to hold properties for the onscreen timer.
 export interface TimerProps {
-    limit: number,
-    lastSend: number
+    limit: number,      // The number of seconds a user must wait before drawing a new stroke
+    lastSend: number    // The timestamp of the user's last-drawn stroke
 }
 
+// Draw a line of width lineWidth on context between start and end.
 export function drawLine(context: CanvasRenderingContext2D,
                          start: Coord, end: Coord,
                          lineWidth: number) {
@@ -70,6 +83,7 @@ export function drawLine(context: CanvasRenderingContext2D,
     context.closePath();
 }
 
+// Draw a line on context defined by the path described by coordPath.
 export function drawLineFromCoordPath(context: CanvasRenderingContext2D,
                            coordPath: CoordPath) {
     context.beginPath();
@@ -84,6 +98,16 @@ export function drawLineFromCoordPath(context: CanvasRenderingContext2D,
     context.closePath();
 }
 
+// Draw a curve on context defined by coordPath with smoothness and thinning as defined.
+// The curve is specifically a quadratic Bezier curve. The average between one coordinate
+// and the "next" is the endpoint of the curve, while the first coordinate is the control
+// point; this achieves a smooth, connected curve.
+//
+// Smoothness defines the number of points to skip when taking the average mentioned above;
+// a higher smoothness results in a smoother curve that also deviates more significantly
+// from the original path.
+// Thinning defines the amount by which to shrink the resulting curve; this is mostly a
+// debugging tool and is not used in practice (hence why it defaults to 0).
 export function drawCurveFromCoordPath(context: CanvasRenderingContext2D,
                                        coordPath: CoordPath,
                                        smoothness: number, thinning: number = 0) {
@@ -92,9 +116,7 @@ export function drawCurveFromCoordPath(context: CanvasRenderingContext2D,
     context.lineWidth = coordPath.width - thinning;
     let i;
     const num_coords = coordPath.pos.length;
-    // This algorithm takes the average of two consecutive points and uses them
-    // as the points to draw the resulting line. The actual coordinates serve
-    // as control points.
+
     for (i = 0; i < num_coords; i += smoothness) {
         const coord = coordPath.pos[i],
               // Math.min avoids overstepping the bounds of coordPath[0]
@@ -107,6 +129,8 @@ export function drawCurveFromCoordPath(context: CanvasRenderingContext2D,
     context.closePath();
 }
 
+// Draws over a line-stroke defined by coordPath on context with a destination-out composite
+// operation. This effectively erases anything on context which lies underneath coordPath.
 export function undrawLineFromCoordPath(context: CanvasRenderingContext2D,
                                         coordPath: CoordPath) {
     // Save state of context so we can revert with no difficulties
@@ -120,6 +144,8 @@ export function undrawLineFromCoordPath(context: CanvasRenderingContext2D,
     context.restore();
 }
 
+// Draws over a curve-stroke defined by coordPath on context with a destination-out composite
+// operation. This effectively erases anything on context which lies underneath coordPath.
 export function undrawCurveFromCoordPath(context: CanvasRenderingContext2D,
                                          coordPath: CoordPath,
                                          smoothness: number, thinning: number = 0) {
@@ -133,6 +159,8 @@ export function undrawCurveFromCoordPath(context: CanvasRenderingContext2D,
     context.restore();
 }
 
+// Iterates through the entire stroke stack defined by coordPathStack and draws each
+// curve-stroke on context.
 export function drawAllCurvesFromStack(context: CanvasRenderingContext2D,
                                        coordPathStack: CoordPath[],
                                        smoothness: number, thinning: number = 0) {
@@ -141,11 +169,11 @@ export function drawAllCurvesFromStack(context: CanvasRenderingContext2D,
     });
 }
 
+// Undoes a stroke defined by coordPathStack. If rerenderAll is true, then simply
+// redraw every stroke on coordPathStack except for the last one. Otherwise, erase
+// the last stroke.
 export function undo(context: CanvasRenderingContext2D,
                      canvas: HTMLCanvasElement,
-                     bufferContext: CanvasRenderingContext2D,
-                     buffer: HTMLCanvasElement,
-                     canvasOffset: Coord,
                      coordPathStack: CoordPath[],
                      popStack: () => void,
                      rerenderAll: boolean,
@@ -155,18 +183,18 @@ export function undo(context: CanvasRenderingContext2D,
 
     if (rerenderAll) {
         // If we're rerendering, just redraw everything.
-        bufferContext.clearRect(0, 0, buffer.width, buffer.height);
-        drawAllCurvesFromStack(bufferContext, coordPathStack.slice(0,-1),
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        drawAllCurvesFromStack(context, coordPathStack.slice(0,-1),
                                smoothness, thinning);
     } else {
         // Otherwise, undraw the last curve
-        undrawCurveFromCoordPath(bufferContext, coordPathStack[stackSize - 1],
+        undrawCurveFromCoordPath(context, coordPathStack[stackSize - 1],
                                  smoothness, -1);
     }
-    popStack();
-    drawFromBuffer(context, canvas, canvasOffset, buffer);
 }
 
+// Draw onto context (and the associated canvas) by reading in the canvas-sized
+// section of buffer at the specified offset.
 export function drawFromBuffer(context: CanvasRenderingContext2D,
                                canvas: HTMLCanvasElement,
                                offset: Coord,
@@ -178,6 +206,9 @@ export function drawFromBuffer(context: CanvasRenderingContext2D,
                       0, 0, canvas.width, canvas.height);
 }
 
+// Pan on the canvas by the movement specified by movement. This essentially shifts
+// the offset of canvas from the top-left corner of buffer, with some checks to ensure
+// that the resulting movement does not place the canvas beyond the bounds of buffer.
 export function panCanvas(canvas: HTMLCanvasElement, buffer: HTMLCanvasElement,
                           canvasOffset: Coord, movement: Coord) {
     canvasOffset.x -= movement.x;
@@ -195,7 +226,9 @@ export function panCanvas(canvas: HTMLCanvasElement, buffer: HTMLCanvasElement,
         canvasOffset.y += movement.y;
 }
 
-// Does a deep check to see if two paths are equal
+// Does a deep check to see if two paths are equal. That is, iterates through each
+// coordinate in both paths and checks if their x and y fields are equal.
+//
 // [O(n^2) with n = average path length]
 export function coordPathsEqual(path1: CoordPath, path2: CoordPath): boolean {
     if (path1.pos.length != path2.pos.length
@@ -210,7 +243,10 @@ export function coordPathsEqual(path1: CoordPath, path2: CoordPath): boolean {
     return true;
 }
 
-// Does a deep check to see if the stack includes a path
+// Does a deep check to see if the stack includes a path. That is, iterates through
+// each element in coordPathStack and performs the deep check coordPathsEqual on said
+// element and path.
+//
 // [O(mn^2) where m = stack size and n = average path length]
 export function stackIncludesPath(path: CoordPath, stack: CoordPath[]) {
     for (let i = 0; i < stack.length; i++) {
