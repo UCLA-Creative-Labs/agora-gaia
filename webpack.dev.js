@@ -37,6 +37,7 @@ module.exports = merge(common, {
         proxy: {
             '/socket/*': {
                 target: process.env.REACT_APP_SOCKET_SERVER + "/socket.io",
+                changeOrigin: true,
                 pathRewrite: {'^/socket': ''},
                 ws: true
             }
