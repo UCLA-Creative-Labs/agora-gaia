@@ -17,7 +17,7 @@ function Timer(props: TimerProps) {
     useEffect(() => {
         debug('watching timer with limit = ' + props.limit);
         const interval = setInterval(() => {
-            setWaitTime(props.limit - Date.now() + props.lastSend);
+            setWaitTime(Math.max(0, props.limit - Date.now() + props.lastSend));
         }, 100);
 
         return () => {

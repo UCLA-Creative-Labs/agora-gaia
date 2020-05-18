@@ -129,6 +129,7 @@ function Paint(props: PaintProps) {
 
         setSelfStore(true);
         storage.setItem('stack', JSON.stringify(stack));
+        storage.setItem('most_recent', Date.now().toString());
     }, [stack]);
 
     useEffect(() => {
@@ -140,11 +141,15 @@ function Paint(props: PaintProps) {
         if (localStack.length > 0) {
             setStack(localStack);
             drawAllCurvesFromStack(bufferContext, localStack, props.smoothness, props.thinning);
+            drawFromBuffer(context, canvas, canvasOffset, buffer);
         }
 
         const packageHandler = (data: CoordPath[]) => {
             debug('received package from socket');
+            debug(data);
             const neededData = data.filter(p => !stackIncludesPath(p, localStack));
+            debug('only need:');
+            debug(neededData);
 
             setStack(prevStack => [...prevStack, ...neededData]);
 

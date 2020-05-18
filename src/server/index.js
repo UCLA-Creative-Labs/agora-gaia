@@ -37,7 +37,10 @@ io.on("connection", (socket) => {
   socket.emit('handshake', client_pool.get(socket.handshake.address))
   client_count += 1;
   console.log("New client connected. Current connection count: " + client_count);
-  db.getData(socket);
+
+    socket.on('init', (timestamp) => {
+        db.getData(socket, timestamp);
+    });
 
   socket.on("update", (data) => {
     send_handshake(socket)

@@ -8,8 +8,13 @@ const pool = new Pool({
   port: 5432,
 })
 
-const getData = (socket) => {
-  pool.query('SELECT data FROM canvas_data ORDER BY time_stamp ASC', (error, results) => {
+const getData = (socket, timestamp) => {
+    const timestampsec = Math.floor(timestamp / 1000);
+    const query = 'SELECT data FROM canvas_data WHERE time_stamp > to_timestamp('
+                    + timestampsec
+                    + ') ORDER BY time_stamp ASC';
+
+  pool.query(query, (error, results) => {
     if (error) {
       throw error
     }
