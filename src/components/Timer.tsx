@@ -8,8 +8,8 @@ import {
 import { millisToMinSec } from '../utils/MathUtils';
 import { debug } from '../utils/Utils';
 
-// A threshold beyond which the displayed number is unreasonably large.
-const UPPER_THRESHOLD = 10 * 60 * 1000;
+// A threshold beyond which the displayed number is considered "unreasonably large".
+const UPPER_THRESHOLD = 24 * 60 * 60 * 1000; // 24 hours
 
 // Component to hold the onscreen timer.
 function Timer(props: TimerProps) {
@@ -29,7 +29,7 @@ function Timer(props: TimerProps) {
     }, [props.limit, props.lastSend]);
 
     useEffect(() => {
-        if (waitTime > 0 && waitTime < Number.MAX_SAFE_INTEGER - UPPER_THRESHOLD)
+        if (waitTime > 0 && waitTime <= UPPER_THRESHOLD)
             setTimerVisible(true);
         else setTimerVisible(false);
     }, [waitTime]);
