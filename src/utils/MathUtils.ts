@@ -38,7 +38,7 @@ export function rectOutOfBoundsY(rect: Rect, bounds: Rect): boolean {
 // Express a millisecond value in mm:ss form.
 export function millisToMinSec(millis: number): string {
     const min = Math.floor(millis / 60000);
-    const sec = Math.floor(millis / 1000) % 60 - min;
+    const sec = Math.floor(millis / 1000) % 60;
     const minStr = min.toString().padStart(2, '0');
     const secStr = sec.toString().padStart(2, '0');
     return `${minStr}:${secStr}`;
