@@ -1,6 +1,6 @@
 # Agora - Gaia
 
-Named for the Earth deity of Greek mythology, **Gaia** is the frontend of Agora, for ✧･ﾟ✧ _it is the frontend that forms the ground upon which this place of gathering lies_ *✧･ﾟ. (Was that sufficiently pretentious? We are programmers, after all.) Gaia works in tandem with [Ouranos, the backend](https://github.com/UCLA-Creative-Labs/agora-ouranos), to give you the collaborative canvas that is Agora.
+Named for the Earth deity of Greek mythology, **Gaia** is the frontend of Agora. Gaia works in tandem with [Ouranos, the backend](https://github.com/UCLA-Creative-Labs/agora-ouranos).
 
 ## Development
 
