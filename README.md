@@ -2,6 +2,8 @@
 
 Named for the Earth deity of Greek mythology, **Gaia** is the frontend of Agora. Gaia works in tandem with [Ouranos, the backend](https://github.com/UCLA-Creative-Labs/agora-ouranos).
 
+For more information about how Gaia works, visit our [Wiki](https://github.com/UCLA-Creative-Labs/agora-gaia/wiki).
+
 ## Development
 
 Make sure you have the latest version of `yarn` installed.
