@@ -1,12 +1,25 @@
-# Project Gaia
+# Agora - Gaia
 
-Make sure you have `yarn` installed.
-Run `yarn install` to install all dependencies.
+Named for the Earth deity of Greek mythology, **Gaia** is the frontend of Agora, for ✧･ﾟ✧ _it is the frontend that forms the ground upon which this place of gathering lies_ *✧･ﾟ. (Was that sufficiently pretentious? We are programmers, after all.) Gaia works in tandem with [Ouranos, the backend](https://github.com/UCLA-Creative-Labs/agora-ouranos), to give you the collaborative canvas that is Agora.
 
-## Instructions on usage
-**To develop:** Run `yarn dev` to start a local development server at http://localhost:8080. Note that you will have to have a local PostgreSQL instance running for this website to function correctly. TODO
+## Development
 
-**To build:** Run `yarn build` to generate build versions of the website in the `dist/` folder, and run `yarn server` to start a server locally. Then open `dist/index.html` to open the website.
+Make sure you have the latest version of `yarn` installed.
+As always, clone this repository and `cd` into it. Run `yarn install` to install all needed dependencies.
+
+Before running anything, you'll need to create a file named `.env` in the repository's root.
+Inside it, add the following line:
+```env
+REACT_APP_SOCKET_SERVER=<your local server instance>
+```
+Replace `<your local server instance>` with the URL of your local server instance (see [Agora Ouranos](https://github.com/UCLA-Creative-Labs/agora-ouranos)), e.g. `http://localhost:3000`.
+
+With that in place, starting a local development instance of the frontend is as simple as running `yarn start`.
+(Note that if you want to be able to connect to this instance from other machines on your local network using your machine's local IP address (`192.168._._`), you'll have to add an additional `--host=0.0.0.0`.)
+
+To generate a production build, simply run `yarn build`.
+The resulting files can be found in the `dist/` directory.
+Simply open `dist/index.html` to run the site.
 
 ## To-Do
 
@@ -17,114 +30,3 @@ Run `yarn install` to install all dependencies.
 
 * Paths are unantialiased. Not too big a deal, but it can be a little frustrating.
 * Not a bug per se (or at least not one we'll fix), but if a user tries to open multiple windows to draw on one computer, they will be in for a confusing time.
-
-## Server Base Architecture - Bryan
-
-### Upon Client Load
-```
-Client side => socket connect to node.js server
-
-            => get all updates from the db
-``` 
-```
-Server side => socket receives connection
-
-            => send over all data within psql server
-```            
-### Upon Client Draw
-```
-Client side => client socket notify server socket to update
-```
-```            
-Server side => socket receives receives update
-
-            => add update to psql server
-            
-            => broadcast an update to all other nodes in network
-```
-```            
-Other nodes => receive update
-
-            => draw update
-```
-
-### Upon Client Undo
-```
-Client side => client socket notify server socket to undo last line
-
-            => use serial id to track all updates sent by client
-```
-```            
-Server side => socket receives receives undo
-
-            => DELETE row from psql server
-            
-            => broadcast deletion to all other nodes in network
-```
-```           
-Other nodes => receive undo
-
-            => undo 
-```
-## Server Advanced Architecture - Bryan
-
-### Upon Client Load
-```
-Client side => load client side cache (cookie)
-
-            => socket connect to node.js server
-            
-            => get all data after cached cookie
-```
-```
-Server side => socket receives connection & id of last item
-
-            => select data with info after client's last cookie
-            
-            => send data to client
-```            
-### Upon Client Draw
-```
-Client side => add a latency of 30 seconds to allow for undoing
-
-            => must keep track of last line drawn by user (NOT OTHER NODES)
-            
-            => client socket notify server socket to update
-```
-```            
-Server side => socket receives receives update
-
-            => add update to psql server
-            
-            => broadcast an update to all other nodes in network
-```
-```            
-Other nodes => receive update
-
-            => draw update
-```
-
-### Upon Client Undo
-```
-Client side => client socket notify app server socket to undo last line drawn by current node
-
-            => get a emit from server on whether undo was successful or not
-           
-            => if unsuccessful, then output that "undo was unsuccessful, changes have been pushed"
-            
-            => if successful, then output that "undo was successful, thankfully no one saw the embarrasing thing you drew"
-```
-            
-```
-Server side => socket receives receives undo
-
-            => check if the line has been sent to postgres yet (past 30 second delay)
-            
-            => if so then send a notification to the client that undo was unsuccessful
-            
-            => if the line is within the 30 second latency, notify client that undo was succesful
- ```
-     
-            
-
-
