@@ -106,11 +106,15 @@ export function drawLineFromCoordPath(context: CanvasRenderingContext2D,
 // Smoothness defines the number of points to skip when taking the average mentioned above;
 // a higher smoothness results in a smoother curve that also deviates more significantly
 // from the original path.
-// Thinning defines the amount by which to shrink the resulting curve; this is mostly a
-// debugging tool and is not used in practice (hence why it defaults to 0).
+// Thinning defines the amount by which to shrink the resulting curve
 export function drawCurveFromCoordPath(context: CanvasRenderingContext2D,
                                        coordPath: CoordPath,
                                        smoothness: number, thinning: number = 0) {
+    if (smoothness <= 0) {
+        drawLineFromCoordPath(context, coordPath);
+        return;
+    }
+
     context.beginPath();
     context.strokeStyle = coordPath.color;
     context.lineWidth = coordPath.width - thinning;
