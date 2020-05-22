@@ -130,11 +130,21 @@ function Paint(props: PaintProps) {
         setSelfStore(true);
         storage.setItem('stack', JSON.stringify(stack));
         debug('stackdata length:');
-        debug(buffer.toDataURL().length);
+        debug(JSON.stringify(stack).length);
         storage.setItem('canvas', buffer.toDataURL());
         debug('canvasdata length:');
         debug(buffer.toDataURL().length);
         storage.setItem('most_recent', Date.now().toString());
+
+        // debug only
+        if (process.env.NODE_ENV !== 'production') {
+            const lengths = JSON.parse(storage.getItem('lengths') || '[]');
+            const strokelens = JSON.parse(storage.getItem('strokelens') || '[]');
+            lengths.push([JSON.stringify(stack).length, buffer.toDataURL().length]);
+            strokelens.push(coordPathLen.current);
+            storage.setItem('lengths', JSON.stringify(lengths));
+            storage.setItem('strokelens', JSON.stringify(strokelens));
+        }
     }, [stack]);
 
     useEffect(() => {

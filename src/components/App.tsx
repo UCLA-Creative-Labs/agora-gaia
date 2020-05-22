@@ -43,7 +43,7 @@ function App() {
                     'olive',
                     'yellow',
                 ]}
-                maxStrokeLen={0}
+                maxStrokeLen={300}
                 rerenderAll={true} // Warning: slows down quickly when true
             />
         </div>
