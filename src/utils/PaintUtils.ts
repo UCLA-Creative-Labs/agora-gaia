@@ -76,6 +76,7 @@ export function drawLine(context: CanvasRenderingContext2D,
                          start: Coord, end: Coord,
                          lineWidth: number) {
     context.beginPath();
+    context.lineCap = 'round';
     context.lineWidth = lineWidth;
     context.moveTo(start.x, start.y);
     context.lineTo(end.x, end.y);
@@ -87,6 +88,7 @@ export function drawLine(context: CanvasRenderingContext2D,
 export function drawLineFromCoordPath(context: CanvasRenderingContext2D,
                            coordPath: CoordPath) {
     context.beginPath();
+    context.lineCap = 'round';
     context.strokeStyle = coordPath.color;
     context.lineWidth = coordPath.width;
     context.moveTo(coordPath.pos[0].x, coordPath.pos[0].y);
@@ -116,6 +118,7 @@ export function drawCurveFromCoordPath(context: CanvasRenderingContext2D,
     }
 
     context.beginPath();
+    context.lineCap = 'round';
     context.strokeStyle = coordPath.color;
     context.lineWidth = coordPath.width - thinning;
     let i;
