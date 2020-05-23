@@ -140,9 +140,15 @@ function Paint(props: PaintProps) {
         if (process.env.NODE_ENV !== 'production') {
             const lengths = JSON.parse(storage.getItem('lengths') || '[]');
             const strokelens = JSON.parse(storage.getItem('strokelens') || '[]');
-            lengths.push([JSON.stringify(stack).length, buffer.toDataURL().length]);
+
+            buffer.toBlob((blob) => {
+                debug('blob size');
+                debug(blob.size);
+                lengths.push([JSON.stringify(stack).length, buffer.toDataURL().length, blob.size]);
+                storage.setItem('lengths', JSON.stringify(lengths));
+            });
+
             strokelens.push(coordPathLen.current);
-            storage.setItem('lengths', JSON.stringify(lengths));
             storage.setItem('strokelens', JSON.stringify(strokelens));
         }
     }, [stack]);
