@@ -137,9 +137,9 @@ function Paint(props: PaintProps) {
 
         storage.setItem('stack', jsonStack);
         debug('stackdata length:');
-        debug(jsonStack.length);
+        debug(jsonStack.length * 2);
         debug('compressed stackdata length:');
-        debug(compressedStack.length);
+        debug(compressedStack.length * 2);
 
         storage.setItem('canvas', dataUrl);
         debug('canvasdata length:');
@@ -174,7 +174,7 @@ function Paint(props: PaintProps) {
                 if (uncompressedStack !== jsonStack) debug('DECOMPRESSION OF STACK FAILED');
                 if (uncompressedData !== dataUrl) debug('DECOMPRESSION OF DATA FAILED');
 
-                lengths.push([JSON.stringify(stack).length, buffer.toDataURL().length, blob.size,
+                lengths.push([JSON.stringify(stack).length * 2, buffer.toDataURL().length * 2, blob.size,
                              compressedStack.length, compressedData.length,
                              decompressTime1.toString(), decompressTime2.toString()]);
                 storage.setItem('lengths', JSON.stringify(lengths));
