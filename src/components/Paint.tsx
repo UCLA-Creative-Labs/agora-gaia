@@ -143,9 +143,9 @@ function Paint(props: PaintProps) {
 
         storage.setItem('canvas', dataUrl);
         debug('canvasdata length:');
-        debug(dataUrl.length);
+        debug(dataUrl.length * 2);
         debug('compressed canvasdata length:');
-        debug(compressedData.length);
+        debug(compressedData.length * 2);
 
         storage.setItem('most_recent', Date.now().toString());
 
@@ -175,7 +175,7 @@ function Paint(props: PaintProps) {
                 if (uncompressedData !== dataUrl) debug('DECOMPRESSION OF DATA FAILED');
 
                 lengths.push([JSON.stringify(stack).length * 2, buffer.toDataURL().length * 2, blob.size,
-                             compressedStack.length, compressedData.length,
+                             compressedStack.length * 2, compressedData.length * 2,
                              decompressTime1.toString(), decompressTime2.toString()]);
                 storage.setItem('lengths', JSON.stringify(lengths));
             });
