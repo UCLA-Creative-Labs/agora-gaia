@@ -232,9 +232,17 @@ function Paint(props: PaintProps) {
 
             setStack(prevStack => [...prevStack, ...neededData]);
 
+            const start = Date.now();
             drawAllCurvesFromStack(bufferContext, neededData,
                 props.smoothness, props.thinning);
             drawFromBuffer(context, canvas, canvasOffset, buffer);
+            const end = Date.now();
+
+            const diff = end - start;
+            debug('load time from server');
+            debug(diff);
+            if (isLocalStorageAvailable())
+                window.localStorage.setItem('loadtimeserver', diff.toString());
         };
 
         const strokeHandler = (data: CoordPath) => {
