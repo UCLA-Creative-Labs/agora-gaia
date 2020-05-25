@@ -157,9 +157,26 @@ function Paint(props: PaintProps) {
             buffer.toBlob((blob) => {
                 debug('blob size');
                 debug(blob.size);
-                lengths.push([JSON.stringify(stack).length,
-                             buffer.toDataURL().length,
-                             blob.size, compressedStack.length, compressedData.length]);
+                const start1 = Date.now();
+                const uncompressedStack = LZString.decompressFromUTF16(compressedStack);
+                const end1 = Date.now();
+                const start2 = Date.now();
+                const uncompressedData = LZString.decompressFromUTF16(compressedData);
+                const end2 = Date.now();
+
+                const decompressTime1 = end1 - start1;
+                debug('decompression time for stack (ms)');
+                debug(decompressTime1);
+                const decompressTime2 = end2 - start2;
+                debug('decompression time for data (ms)');
+                debug(decompressTime2);
+
+                if (uncompressedStack !== jsonStack) debug('DECOMPRESSION OF STACK FAILED');
+                if (uncompressedData !== dataUrl) debug('DECOMPRESSION OF DATA FAILED');
+
+                lengths.push([JSON.stringify(stack).length, buffer.toDataURL().length, blob.size,
+                             compressedStack.length, compressedData.length,
+                             decompressTime1.toString(), decompressTime2.toString()]);
                 storage.setItem('lengths', JSON.stringify(lengths));
             });
 
