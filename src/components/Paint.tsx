@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
+import * as LZString from 'lz-string';
 
 import ColorButtons from './ColorButtons';
 import DrawControls from './DrawControls';
@@ -127,13 +128,25 @@ function Paint(props: PaintProps) {
         debug('stack changed; updating local storage');
         const storage = window.localStorage;
 
+        const jsonStack = JSON.stringify(stack);
+        const dataUrl = buffer.toDataURL();
+        const compressedStack = LZString.compressToUTF16(jsonStack);
+        const compressedData = LZString.compressToUTF16(dataUrl);
+
         setSelfStore(true);
-        storage.setItem('stack', JSON.stringify(stack));
+
+        storage.setItem('stack', jsonStack);
         debug('stackdata length:');
-        debug(JSON.stringify(stack).length);
-        storage.setItem('canvas', buffer.toDataURL());
+        debug(jsonStack.length);
+        debug('compressed stackdata length:');
+        debug(compressedStack.length);
+
+        storage.setItem('canvas', dataUrl);
         debug('canvasdata length:');
-        debug(buffer.toDataURL().length);
+        debug(dataUrl.length);
+        debug('compressed canvasdata length:');
+        debug(compressedData.length);
+
         storage.setItem('most_recent', Date.now().toString());
 
         // debug only
@@ -144,7 +157,9 @@ function Paint(props: PaintProps) {
             buffer.toBlob((blob) => {
                 debug('blob size');
                 debug(blob.size);
-                lengths.push([JSON.stringify(stack).length, buffer.toDataURL().length, blob.size]);
+                lengths.push([JSON.stringify(stack).length,
+                             buffer.toDataURL().length,
+                             blob.size, compressedStack.length, compressedData.length]);
                 storage.setItem('lengths', JSON.stringify(lengths));
             });
 
