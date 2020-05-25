@@ -216,8 +216,11 @@ function Paint(props: PaintProps) {
             
             debug('load time');
             debug(diff);
-            if (!isLocalStorageAvailable()) return;
-            window.localStorage.setItem('loadtime', diff.toString());
+            if (isLocalStorageAvailable())
+                window.localStorage.setItem('loadtime', diff.toString());
+        } else {
+            if (isLocalStorageAvailable())
+                window.localStorage.setItem('loadtime', '0'.toString());
         }
 
         const packageHandler = (data: CoordPath[]) => {
