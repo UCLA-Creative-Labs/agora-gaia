@@ -206,8 +206,18 @@ function Paint(props: PaintProps) {
         } else */
         if (localStack.length > 0) {
             setStack(localStack);
+
+            const start = Date.now();
             drawAllCurvesFromStack(bufferContext, localStack, props.smoothness, props.thinning);
             drawFromBuffer(context, canvas, canvasOffset, buffer);
+            const end = Date.now();
+
+            const diff = end - start;
+            
+            debug('load time');
+            debug(diff);
+            if (!isLocalStorageAvailable()) return;
+            window.localStorage.setItem('loadtime', diff.toString());
         }
 
         const packageHandler = (data: CoordPath[]) => {
