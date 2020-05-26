@@ -149,40 +149,37 @@ function Paint(props: PaintProps) {
 
         storage.setItem('most_recent', Date.now().toString());
 
-        // debug only
-        if (process.env.NODE_ENV !== 'production') {
-            const lengths = JSON.parse(storage.getItem('lengths') || '[]');
-            const strokelens = JSON.parse(storage.getItem('strokelens') || '[]');
+        const lengths = JSON.parse(storage.getItem('lengths') || '[]');
+        const strokelens = JSON.parse(storage.getItem('strokelens') || '[]');
 
-            buffer.toBlob((blob) => {
-                debug('blob size');
-                debug(blob.size);
-                const start1 = Date.now();
-                const uncompressedStack = LZString.decompressFromUTF16(compressedStack);
-                const end1 = Date.now();
-                const start2 = Date.now();
-                const uncompressedData = LZString.decompressFromUTF16(compressedData);
-                const end2 = Date.now();
+        buffer.toBlob((blob) => {
+            debug('blob size');
+            debug(blob.size);
+            const start1 = Date.now();
+            const uncompressedStack = LZString.decompressFromUTF16(compressedStack);
+            const end1 = Date.now();
+            const start2 = Date.now();
+            const uncompressedData = LZString.decompressFromUTF16(compressedData);
+            const end2 = Date.now();
 
-                const decompressTime1 = end1 - start1;
-                debug('decompression time for stack (ms)');
-                debug(decompressTime1);
-                const decompressTime2 = end2 - start2;
-                debug('decompression time for data (ms)');
-                debug(decompressTime2);
+            const decompressTime1 = end1 - start1;
+            debug('decompression time for stack (ms)');
+            debug(decompressTime1);
+            const decompressTime2 = end2 - start2;
+            debug('decompression time for data (ms)');
+            debug(decompressTime2);
 
-                if (uncompressedStack !== jsonStack) debug('DECOMPRESSION OF STACK FAILED');
-                if (uncompressedData !== dataUrl) debug('DECOMPRESSION OF DATA FAILED');
+            if (uncompressedStack !== jsonStack) debug('DECOMPRESSION OF STACK FAILED');
+            if (uncompressedData !== dataUrl) debug('DECOMPRESSION OF DATA FAILED');
 
-                lengths.push([JSON.stringify(stack).length * 2, buffer.toDataURL().length * 2, blob.size,
-                             compressedStack.length * 2, compressedData.length * 2,
-                             decompressTime1.toString(), decompressTime2.toString()]);
-                storage.setItem('lengths', JSON.stringify(lengths));
-            });
+            lengths.push([JSON.stringify(stack).length * 2, buffer.toDataURL().length * 2, blob.size,
+                         compressedStack.length * 2, compressedData.length * 2,
+                         decompressTime1.toString(), decompressTime2.toString()]);
+            storage.setItem('lengths', JSON.stringify(lengths));
+        });
 
-            strokelens.push(coordPathLen.current);
-            storage.setItem('strokelens', JSON.stringify(strokelens));
-        }
+        strokelens.push(coordPathLen.current);
+        storage.setItem('strokelens', JSON.stringify(strokelens));
     }, [stack]);
 
     useEffect(() => {
@@ -223,7 +220,16 @@ function Paint(props: PaintProps) {
                 window.localStorage.setItem('loadtime', '0'.toString());
         }
 
+        const requestStart = Date.now();
+
         const packageHandler = (data: CoordPath[]) => {
+            const requestEnd = Date.now();
+            debug('time taken to receive data from server');
+            const requestDiff = requestEnd - requestStart;
+            debug(requestEnd - requestStart);
+            if (isLocalStorageAvailable())
+                window.localStorage.setItem('datareceivetime', requestDiff.toString());
+
             debug('received package from socket');
             debug(data);
             const neededData = data.filter(p => !stackIncludesPath(p, localStack));
@@ -239,7 +245,7 @@ function Paint(props: PaintProps) {
             const end = Date.now();
 
             const diff = end - start;
-            debug('load time from server');
+            debug('load time for stack received from server');
             debug(diff);
             if (isLocalStorageAvailable())
                 window.localStorage.setItem('loadtimeserver', diff.toString());
