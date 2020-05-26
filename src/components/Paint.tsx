@@ -137,10 +137,6 @@ function Paint(props: PaintProps) {
         debug('stackdata length:');
         debug(jsonStack.length * 2);
 
-        storage.setItem('canvas', dataUrl);
-        debug('canvasdata length:');
-        debug(dataUrl.length * 2);
-
         storage.setItem('most_recent', Date.now().toString());
     }, [stack]);
 
@@ -150,7 +146,6 @@ function Paint(props: PaintProps) {
         debug('registering listeners');
 
         const localStack: CoordPath[] = JSON.parse(window.localStorage.getItem('stack')) || [];
-        const localCanvasData: string = window.localStorage.getItem('canvas');
 
         if (localStack.length > 0) {
             setStack(localStack);
