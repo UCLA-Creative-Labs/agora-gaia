@@ -130,56 +130,18 @@ function Paint(props: PaintProps) {
 
         const jsonStack = JSON.stringify(stack);
         const dataUrl = buffer.toDataURL();
-        const compressedStack = LZString.compressToUTF16(jsonStack);
-        const compressedData = LZString.compressToUTF16(dataUrl);
 
         setSelfStore(true);
 
         storage.setItem('stack', jsonStack);
         debug('stackdata length:');
         debug(jsonStack.length * 2);
-        debug('compressed stackdata length:');
-        debug(compressedStack.length * 2);
 
         storage.setItem('canvas', dataUrl);
         debug('canvasdata length:');
         debug(dataUrl.length * 2);
-        debug('compressed canvasdata length:');
-        debug(compressedData.length * 2);
 
         storage.setItem('most_recent', Date.now().toString());
-
-        const lengths = JSON.parse(storage.getItem('lengths') || '[]');
-        const strokelens = JSON.parse(storage.getItem('strokelens') || '[]');
-
-        buffer.toBlob((blob) => {
-            debug('blob size');
-            debug(blob.size);
-            const start1 = Date.now();
-            const uncompressedStack = LZString.decompressFromUTF16(compressedStack);
-            const end1 = Date.now();
-            const start2 = Date.now();
-            const uncompressedData = LZString.decompressFromUTF16(compressedData);
-            const end2 = Date.now();
-
-            const decompressTime1 = end1 - start1;
-            debug('decompression time for stack (ms)');
-            debug(decompressTime1);
-            const decompressTime2 = end2 - start2;
-            debug('decompression time for data (ms)');
-            debug(decompressTime2);
-
-            if (uncompressedStack !== jsonStack) debug('DECOMPRESSION OF STACK FAILED');
-            if (uncompressedData !== dataUrl) debug('DECOMPRESSION OF DATA FAILED');
-
-            lengths.push([JSON.stringify(stack).length * 2, buffer.toDataURL().length * 2, blob.size,
-                         compressedStack.length * 2, compressedData.length * 2,
-                         decompressTime1.toString(), decompressTime2.toString()]);
-            storage.setItem('lengths', JSON.stringify(lengths));
-        });
-
-        strokelens.push(coordPathLen.current);
-        storage.setItem('strokelens', JSON.stringify(strokelens));
     }, [stack]);
 
     useEffect(() => {
@@ -190,17 +152,6 @@ function Paint(props: PaintProps) {
         const localStack: CoordPath[] = JSON.parse(window.localStorage.getItem('stack')) || [];
         const localCanvasData: string = window.localStorage.getItem('canvas');
 
-        /* if (localCanvasData) {
-            const canvasImg = new Image;
-            canvasImg.onload = () => {
-                debug('drawing local image');
-                debug(localCanvasData.length);
-                bufferContext.clearRect(0, 0, buffer.width, buffer.height);
-                bufferContext.drawImage(canvasImg, 0, 0);
-            };
-            canvasImg.src = localCanvasData;
-            drawFromBuffer(context, canvas, canvasOffset, buffer);
-        } else */
         if (localStack.length > 0) {
             setStack(localStack);
 
