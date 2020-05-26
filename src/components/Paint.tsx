@@ -232,14 +232,11 @@ function Paint(props: PaintProps) {
 
             debug('received package from socket');
             debug(data);
-            const neededData = data.filter(p => !stackIncludesPath(p, localStack));
-            debug('only need:');
-            debug(neededData);
 
-            setStack(prevStack => [...prevStack, ...neededData]);
+            setStack(prevStack => [...prevStack, ...data]);
 
             const start = Date.now();
-            drawAllCurvesFromStack(bufferContext, neededData,
+            drawAllCurvesFromStack(bufferContext, data,
                 props.smoothness, props.thinning);
             drawFromBuffer(context, canvas, canvasOffset, buffer);
             const end = Date.now();
