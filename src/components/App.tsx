@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 import Paint from './Paint';
+import Loader from './Loader'
 
 import { useWindowSize } from '../utils/Hooks';
 
@@ -16,6 +17,7 @@ function App() {
 
     return (
         <div id='app-wrapper'>
+            <Loader/>
             <Paint
                 width={canvasWidth}
                 height={canvasHeight}
