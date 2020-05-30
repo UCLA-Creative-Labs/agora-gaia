@@ -145,17 +145,7 @@ function Paint(props: PaintProps) {
         const localStack: CoordPath[] = JSON.parse(window.localStorage.getItem('stack')) || [];
         const localCanvasData: string = window.localStorage.getItem('canvas');
 
-        if (localCanvasData) {
-            const canvasImg = new Image;
-            canvasImg.onload = () => {
-                debug('drawing local image');
-                debug(localCanvasData.length);
-                bufferContext.clearRect(0, 0, buffer.width, buffer.height);
-                bufferContext.drawImage(canvasImg, 0, 0);
-            };
-            canvasImg.src = localCanvasData;
-            drawFromBuffer(context, canvas, canvasOffset, buffer);
-        } else if (localStack.length > 0) {
+        if (localStack.length > 0) {
             setStack(localStack);
             drawAllCurvesFromStack(bufferContext, localStack, props.smoothness, props.thinning);
             drawFromBuffer(context, canvas, canvasOffset, buffer);
@@ -164,13 +154,10 @@ function Paint(props: PaintProps) {
         const packageHandler = (data: CoordPath[]) => {
             debug('received package from socket');
             debug(data);
-            const neededData = data.filter(p => !stackIncludesPath(p, localStack));
-            debug('only need:');
-            debug(neededData);
 
-            setStack(prevStack => [...prevStack, ...neededData]);
+            setStack(prevStack => [...prevStack, ...data]);
 
-            drawAllCurvesFromStack(bufferContext, neededData,
+            drawAllCurvesFromStack(bufferContext, data,
                 props.smoothness, props.thinning);
             drawFromBuffer(context, canvas, canvasOffset, buffer);
         };
