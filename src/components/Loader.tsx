@@ -2,8 +2,8 @@ import React, { useState, useEffect}  from "react";
 import Lottie from "react-lottie";
 
 // assets/lottie contains all the json data for lottie
-import * as doneData from "../assets/lottie/doneData.json"
-import * as drawingLove from  "../assets/lottie/drawingLove.json"
+import * as doneData from "../assets/lottie/ding.json"
+import * as drawingLove from  "../assets/lottie/banana-updated.json"
 
 import './styles/Loader.scss';
 
