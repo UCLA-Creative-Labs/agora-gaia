@@ -17,7 +17,7 @@ const connectOptions = {
     }
   };
 
-// TODO: Change animationData => connecting animation
+// TODO: Change animationData => build animation
 const buildOptions = {
     loop: true,
     autoplay: true,
