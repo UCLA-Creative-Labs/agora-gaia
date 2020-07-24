@@ -22,6 +22,8 @@ export interface PaintProps {
     maxWidth: number, maxHeight: number,
     lineWidth: number,
 
+    connected: () => void, loaded: () => void,
+
     // Line smoothing/thinning is a global property, not user defined, so
     // they are handled at the canvas level, not the stroke level
     smoothness: number,

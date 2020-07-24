@@ -80,6 +80,9 @@ function Paint(props: PaintProps) {
     // If the element doesn't have a colors property, default to black + RGB
     const colors: string[] = props.colors || [ 'black', 'red', 'green', 'blue' ]
 
+    const sendConnected = () => { props.connected(); }
+    const sendLoaded = () => { props.loaded(); }
+
     const storageHandler = (e: StorageEvent) => {
         if (e.key == 'stack' && !selfStore) {
             debug('different instance wrote to local storage; locking');
@@ -171,6 +174,8 @@ function Paint(props: PaintProps) {
         const packageHandler = (data: CoordPath[]) => {
             const requestEnd = Date.now();
             debug('time taken to receive data from server');
+
+            sendConnected();
             const requestDiff = requestEnd - requestStart;
             debug(requestEnd - requestStart);
             if (isLocalStorageAvailable())
@@ -186,7 +191,8 @@ function Paint(props: PaintProps) {
                 props.smoothness, props.thinning);
             drawFromBuffer(context, canvas, canvasOffset, buffer);
             const end = Date.now();
-
+            
+            sendLoaded();
             const diff = end - start;
             debug('load time for stack received from server');
             debug(diff);

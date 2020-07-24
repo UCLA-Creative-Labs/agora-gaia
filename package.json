@@ -10,6 +10,7 @@
     "@types/react-dom": "^16.9.8",
     "@types/socket.io-client": "^1.4.32",
     "lz-string": "^1.4.4",
+    "path": "^0.12.7",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-fade-in": "^1.0.0",
@@ -43,7 +44,7 @@
     "url-loader": "^4.1.0",
     "webpack": "^4.42.1",
     "webpack-cli": "^3.3.11",
-    "webpack-dev-server": "^3.10.3",
+    "webpack-dev-server": "^3.11.0",
     "webpack-merge": "^4.2.2"
   }
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect}  from "react";
+import React, { useState, useEffect, useImperativeHandle, forwardRef}  from "react";
 import Lottie from "react-lottie";
 
 // assets/lottie contains all the json data for lottie
@@ -36,7 +36,7 @@ const doneOptions = {
     }
 };
 
-function Loader(){
+var Loader = forwardRef((props, ref) => {
     // Two states => one for connecting, one for building 
     const [ isConnecting, setIsConnecting ] = useState(true)
     const [ isBuilding, setIsBuilding ] = useState(true)
@@ -45,23 +45,24 @@ function Loader(){
     const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
     const ani_size = vh / 1242 * 120;
 
-    // On component mount
-    // TODO: hook up to Paint to allow for changing states and setting things false
-    useEffect(() => {
-        const body = document.body;
-        setTimeout(() => {
-            setIsConnecting(false);                     // After you have connected, set state to false 
-            setTimeout(() => {                          // Set a timeout to let the checkmark stay for 1.5s
-                body.classList.add('connected');        // This transitions between "connecting" and "building"
-                setTimeout(()=>{
-                    setIsBuilding(false);               // After canvas is built, set state to false
-                    setTimeout(()=>{                    // Transitions to show the canvas and hide the animations
-                        body.classList.add('loaded');
-                    },1500);  
-                }, 4000);
-            },1500)
-        }, 4000);
-    }, []);
+    const connected = () => {
+        setIsConnecting(false);
+        document.body.classList.add('connected');
+    }
+    const loaded = () => {
+        setTimeout(()=>{                    
+            setIsBuilding(false);
+            setTimeout(()=>{                    
+                document.body.classList.add('loaded');
+            },1000);
+        }, 500);
+    };
+    useImperativeHandle(ref, () => {
+        return {
+            connected: connected,
+            loaded: loaded,
+        };
+    });
 
     // Style change so margin isnt huge
     const overrideMargins = {
@@ -94,6 +95,6 @@ function Loader(){
             </div>
         </div>
     );
-}
+});
 
 export default Loader;
