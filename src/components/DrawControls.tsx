@@ -145,14 +145,6 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
             id='brush-btn'>
             <img src={drawToggleBtn} style={{ 'width': '30px', 'height': '30px' }} />
           </button>
-          <button
-            onClick={_ => {
-              console.log("tutorial")
-            }}
-              className={'side-btn'}
-            id='brush-btn'>
-            ?
-          </button>
         </span>
       );
       break;
