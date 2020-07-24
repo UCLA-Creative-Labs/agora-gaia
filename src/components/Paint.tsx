@@ -148,7 +148,6 @@ function Paint(props: PaintProps) {
         debug('registering listeners');
 
         const localStack: CoordPath[] = JSON.parse(window.localStorage.getItem('stack')) || [];
-
         if (localStack.length > 0) {
             setStack(localStack);
 
