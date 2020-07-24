@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
-import * as LZString from 'lz-string';
 
 import ColorButtons from './ColorButtons';
 import DrawControls from './DrawControls';

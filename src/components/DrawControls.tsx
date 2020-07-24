@@ -15,7 +15,6 @@ import ZoomInImg from '../assets/icons/add-black-18dp.svg';
 import ZoomOutImg from '../assets/icons/remove-black-18dp.svg';
 import BrushImg from '../assets/icons/brush-black-18dp.svg';
 import PanImg from '../assets/icons/pan_tool-black-18dp.svg';
-import questionImg from '../assets/icons/question-mark.svg';
 
 // Component to hold draw control buttons. On the left are buttons to control
 // the width of the user's stroke; on the right are buttons to undo or to toggle
