@@ -131,7 +131,6 @@ function Paint(props: PaintProps) {
         const storage = window.localStorage;
 
         const jsonStack = JSON.stringify(stack);
-        const dataUrl = buffer.toDataURL();
 
         setSelfStore(true);
 
@@ -151,58 +150,28 @@ function Paint(props: PaintProps) {
         if (localStack.length > 0) {
             setStack(localStack);
 
-            const start = Date.now();
             drawAllCurvesFromStack(bufferContext, localStack, props.smoothness, props.thinning);
             drawFromBuffer(context, canvas, canvasOffset, buffer);
-            const end = Date.now();
-
-            const diff = end - start;
-            
-            debug('load time');
-            debug(diff);
-            if (isLocalStorageAvailable())
-                window.localStorage.setItem('loadtime', diff.toString());
-        } else {
-            if (isLocalStorageAvailable())
-                window.localStorage.setItem('loadtime', '0'.toString());
         }
 
-        const requestStart = Date.now();
-
         const packageHandler = (data: CoordPath[]) => {
-            const requestEnd = Date.now();
-            debug('time taken to receive data from server');
-
             sendConnected();
-            const requestDiff = requestEnd - requestStart;
-            debug(requestEnd - requestStart);
-            if (isLocalStorageAvailable())
-                window.localStorage.setItem('datareceivetime', requestDiff.toString());
 
             debug('received package from socket');
             debug(data);
 
             setStack(prevStack => [...prevStack, ...data]);
 
-            const start = Date.now();
-            drawAllCurvesFromStack(bufferContext, data,
-                props.smoothness, props.thinning);
+            drawAllCurvesFromStack(bufferContext, data, props.smoothness, props.thinning);
             drawFromBuffer(context, canvas, canvasOffset, buffer);
-            const end = Date.now();
             
             sendLoaded();
-            const diff = end - start;
-            debug('load time for stack received from server');
-            debug(diff);
-            if (isLocalStorageAvailable())
-                window.localStorage.setItem('loadtimeserver', diff.toString());
         };
 
         const strokeHandler = (data: CoordPath) => {
             debug('detected stroke from server');
             setStack(prevStack => [...prevStack, data]);
-            drawCurveFromCoordPath(bufferContext, data,
-                props.smoothness, props.thinning);
+            drawCurveFromCoordPath(bufferContext, data, props.smoothness, props.thinning);
             drawFromBuffer(context, canvas, canvasOffset, buffer);
         };
 
