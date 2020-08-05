@@ -79,6 +79,9 @@ function Paint(props: PaintProps) {
     // If the element doesn't have a colors property, default to black + RGB
     const colors: string[] = props.colors || [ 'black', 'red', 'green', 'blue' ]
 
+    const sendConnected = () => { props.connected(); }
+    const sendLoaded = () => { props.loaded(); }
+
     const storageHandler = (e: StorageEvent) => {
         if (e.key == 'stack' && !selfStore) {
             debug('different instance wrote to local storage; locking');
@@ -127,13 +130,14 @@ function Paint(props: PaintProps) {
         debug('stack changed; updating local storage');
         const storage = window.localStorage;
 
+        const jsonStack = JSON.stringify(stack);
+
         setSelfStore(true);
-        storage.setItem('stack', JSON.stringify(stack));
+
+        storage.setItem('stack', jsonStack);
         debug('stackdata length:');
-        debug(buffer.toDataURL().length);
-        storage.setItem('canvas', buffer.toDataURL());
-        debug('canvasdata length:');
-        debug(buffer.toDataURL().length);
+        debug(jsonStack.length * 2);
+
         storage.setItem('most_recent', Date.now().toString());
     }, [stack]);
 
@@ -143,30 +147,31 @@ function Paint(props: PaintProps) {
         debug('registering listeners');
 
         const localStack: CoordPath[] = JSON.parse(window.localStorage.getItem('stack')) || [];
-        const localCanvasData: string = window.localStorage.getItem('canvas');
-
         if (localStack.length > 0) {
             setStack(localStack);
+
             drawAllCurvesFromStack(bufferContext, localStack, props.smoothness, props.thinning);
             drawFromBuffer(context, canvas, canvasOffset, buffer);
         }
 
         const packageHandler = (data: CoordPath[]) => {
+            sendConnected();
+
             debug('received package from socket');
             debug(data);
 
             setStack(prevStack => [...prevStack, ...data]);
 
-            drawAllCurvesFromStack(bufferContext, data,
-                props.smoothness, props.thinning);
+            drawAllCurvesFromStack(bufferContext, data, props.smoothness, props.thinning);
             drawFromBuffer(context, canvas, canvasOffset, buffer);
+            
+            sendLoaded();
         };
 
         const strokeHandler = (data: CoordPath) => {
             debug('detected stroke from server');
             setStack(prevStack => [...prevStack, data]);
-            drawCurveFromCoordPath(bufferContext, data,
-                props.smoothness, props.thinning);
+            drawCurveFromCoordPath(bufferContext, data, props.smoothness, props.thinning);
             drawFromBuffer(context, canvas, canvasOffset, buffer);
         };
 
