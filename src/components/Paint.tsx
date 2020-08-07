@@ -87,6 +87,9 @@ function Paint(props: PaintProps) {
             debug('different instance wrote to local storage');
             setSelfStore(false);
             // setStack(JSON.parse(e.newValue) || []);
+            setCannotDraw(true);	
+            setCanUndo(false);	
+            setCanToggle(false);
         }
     };
 
@@ -152,15 +155,13 @@ function Paint(props: PaintProps) {
         }
 
         const packageHandler = (data: CoordPath[]) => {
-            sendConnected();
-
             debug('received package from socket');
 
             setStack(prevStack => [...prevStack, ...data]);
 
             drawAllCurvesFromStack(bufferContext, data, props.smoothness, props.thinning);
             drawFromBuffer(context, canvas, canvasOffset, buffer);
-            
+
             sendLoaded();
         };
 
@@ -200,6 +201,7 @@ function Paint(props: PaintProps) {
             debug('received handshake from server');
             setHandshake(data);
             setLastSend(data.last_send);
+            sendConnected();
         };
 
         debug('registering handshake listener');
