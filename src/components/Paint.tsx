@@ -84,11 +84,11 @@ function Paint(props: PaintProps) {
 
     const storageHandler = (e: StorageEvent) => {
         if (e.key == 'stack' && !selfStore) {
-            debug('different instance wrote to local storage');
+            debug('different instance wrote to local storage; locking');
             setSelfStore(false);
             // setStack(JSON.parse(e.newValue) || []);
-            setCannotDraw(true);	
-            setCanUndo(false);	
+            setCannotDraw(true);
+            setCanUndo(false);
             setCanToggle(false);
         }
     };
