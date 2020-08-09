@@ -50,7 +50,7 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
                    props.context.lineWidth = props.currentCoordPath.width;
                    props.popStack();
                    drawFromBuffer(props.context, props.canvas,
-                                  props.canvasOffset, props.buffer);
+                                  props.canvasOffset, props.buffer, props.canvasScale);
              } else {
                  setUndoDisabled(true);
              }

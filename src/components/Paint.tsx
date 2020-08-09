@@ -16,7 +16,7 @@ import {
     stackIncludesPath
 } from '../utils/PaintUtils';
 import {
-    Coord, distance,
+    Coord, distance, clamp,
     outOfBoundsX, outOfBoundsY,
     rectOutOfBoundsX, rectOutOfBoundsY
 } from '../utils/MathUtils';
@@ -50,6 +50,7 @@ function Paint(props: PaintProps) {
     const [ canToggle, setCanToggle ] = useState(true);
     const [ canUndo, setCanUndo ] = useState(false);
     const [ lastSend, setLastSend ] = useState(0);
+    const [ scale, setScale ] = useState(1);
 
     const canvasRef = useCallback(ref => { if (ref !== null) { setCanvas(ref); } }, [setCanvas]);
 
@@ -121,7 +122,7 @@ function Paint(props: PaintProps) {
 
         debug('rerendering canvas');
 
-        drawFromBuffer(context, canvas, canvasOffset, buffer);
+        drawFromBuffer(context, canvas, canvasOffset, buffer, scale);
     }, [canvas]);
 
     useEffect(() => {
@@ -142,7 +143,7 @@ function Paint(props: PaintProps) {
 
     useEffect(() => {
         const bufferContext = buffer.getContext('2d');
-        if (!context || !bufferContext || !isStackEmpty) return;
+        if (!context || !bufferContext) return;
         debug('registering listeners');
 
         const localStack: CoordPath[] = JSON.parse(window.localStorage.getItem('stack')) || [];
@@ -150,7 +151,7 @@ function Paint(props: PaintProps) {
             setStack(localStack);
 
             drawAllCurvesFromStack(bufferContext, localStack, props.smoothness, props.thinning);
-            drawFromBuffer(context, canvas, canvasOffset, buffer);
+            drawFromBuffer(context, canvas, canvasOffset, buffer, scale);
         }
 
         const packageHandler = (data: CoordPath[]) => {
@@ -159,7 +160,7 @@ function Paint(props: PaintProps) {
             setStack(prevStack => [...prevStack, ...data]);
 
             drawAllCurvesFromStack(bufferContext, data, props.smoothness, props.thinning);
-            drawFromBuffer(context, canvas, canvasOffset, buffer);
+            drawFromBuffer(context, canvas, canvasOffset, buffer, scale);
 
             sendLoaded();
         };
@@ -168,7 +169,7 @@ function Paint(props: PaintProps) {
             debug('detected stroke from server');
             setStack(prevStack => [...prevStack, data]);
             drawCurveFromCoordPath(bufferContext, data, props.smoothness, props.thinning);
-            drawFromBuffer(context, canvas, canvasOffset, buffer);
+            drawFromBuffer(context, canvas, canvasOffset, buffer, scale);
         };
 
         const resetHandler = (data: any) => {
@@ -183,17 +184,16 @@ function Paint(props: PaintProps) {
         // FOR RESETING LOCAL STORAGE MAYBE DO THIS TWICE A DAY?
         SocketUtils.registerReset(resetHandler);
 
-        /* TODO: find out why this gets called immediately
+        // Note: this is kind of slow when zooming, can we improve it somehow?
         return () => {
             debug('unregistering listeners');
             // SocketUtils.unregisterDrawLimit(drawLimitHandler);
             // SocketUtils.unregisterHandshake(handshakeHandler);
-            // SocketUtils.unregisterPackage(packageHandler);
-            // SocketUtils.unregisterStroke(strokeHandler);
-            // SocketUtils.unregisterReset(resetHandler);
+            SocketUtils.unregisterPackage(packageHandler);
+            SocketUtils.unregisterStroke(strokeHandler);
+            SocketUtils.unregisterReset(resetHandler);
         }
-         */
-    }, [canvas, context, isStackEmpty]);
+    }, [canvas, context, isStackEmpty, scale]);
 
     useEffect(() => {
         const handshakeHandler = (data: SocketUtils.Handshake) => {
@@ -244,7 +244,7 @@ function Paint(props: PaintProps) {
         if (outOfBoundsY(canvasOffset.y + canvas.width, bufferRect))
             canvasOffset.y = bufferRect.sy + bufferRect.height - canvas.height;
 
-        drawFromBuffer(context, canvas, canvasOffset, buffer);
+        drawFromBuffer(context, canvas, canvasOffset, buffer, scale);
     };
 
     useEffect(() => {
@@ -338,7 +338,7 @@ function Paint(props: PaintProps) {
                         // Reset the path
                         currentCoordPath.current.pos = []
                         debug('redrawing buffer');
-                        drawFromBuffer(context, canvas, canvasOffset, buffer);
+                        drawFromBuffer(context, canvas, canvasOffset, buffer, scale);
                     }}
                     onMouseMove = {e => {
                         if (cannotDraw) {
@@ -354,7 +354,7 @@ function Paint(props: PaintProps) {
                             canvas.style.cursor = 'grabbing';
                             const movement = { x: e.movementX, y: e.movementY };
                             panCanvas(canvas, buffer, canvasOffset, movement);
-                            drawFromBuffer(context, canvas, canvasOffset, buffer);
+                            drawFromBuffer(context, canvas, canvasOffset, buffer, scale);
                         } else {
                             // const canvas = canvasRef.current;
                             const bounds = canvas.getBoundingClientRect();
@@ -444,7 +444,7 @@ function Paint(props: PaintProps) {
                         // Reset the path
                         currentCoordPath.current.pos = []
                         debug('redrawing buffer');
-                        drawFromBuffer(context, canvas, canvasOffset, buffer);
+                        drawFromBuffer(context, canvas, canvasOffset, buffer, scale);
                     }}
                     onTouchMove = {e => {
                         e.preventDefault();
@@ -460,7 +460,7 @@ function Paint(props: PaintProps) {
                             const movement = { x: deltaX, y: deltaY };
 
                             panCanvas(canvas, buffer, canvasOffset, movement);
-                            drawFromBuffer(context, canvas, canvasOffset, buffer);
+                            drawFromBuffer(context, canvas, canvasOffset, buffer, scale);
                         } else {
                             const bufferContext = buffer.getContext('2d');
 
@@ -482,7 +482,9 @@ function Paint(props: PaintProps) {
                         touchPos.current = lastTouchPos;
                     }}
                     onWheel={e => {
-                        // TODO: Use e.deltaY to zoom into the canvas?
+                        const newScale = clamp(scale + e.deltaY * 0.001, 0.5, 2);
+                        setScale(newScale);
+                        drawFromBuffer(context, canvas, canvasOffset, buffer, newScale);
                     }}>
                     {'Your browser doesn\'t support <canvas> elements :('}
                 </canvas>
@@ -498,6 +500,7 @@ function Paint(props: PaintProps) {
                     cannotDraw={cannotDraw}
                     canToggle={canToggle}
                     canUndo={canUndo}
+                    canvasScale={scale}
                     paintProps={props}
                     toggleCannotDraw={toggleCannotDraw}
                     popStack={popStack}/>

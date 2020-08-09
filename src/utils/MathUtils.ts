@@ -13,6 +13,11 @@ export function distance(a: Coord, b: Coord): number {
     return Math.hypot(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
 }
 
+// Clamp a value between two bounds.
+export function clamp(val: number, min: number, max: number) {
+    return Math.max(min, Math.min(val, max));
+}
+
 // Returns true if x is beyond the horizontal bounds of the supplied Rect
 export function outOfBoundsX(x: number, bounds: Rect): boolean {
     return x < bounds.sx || x > bounds.sx + bounds.width;

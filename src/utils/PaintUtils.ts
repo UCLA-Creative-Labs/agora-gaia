@@ -50,6 +50,7 @@ export interface CanvasProps {
     buffer?: HTMLCanvasElement,                 // The offscreen buffer itself
     canvasOffset?: Coord,                       // The offset of the canvas' top left corner
                                                 //  from that of the buffer canvas
+    canvasScale?: number,                       // The scale of the canvas
     currentCoordPath?: CoordPath,               // The path for the stroke being draw
     coordPathStack?: CoordPath[],               // The overall stack of paths
     cannotDraw?: boolean,                       // True if the user is to be prevented from drawing
@@ -207,12 +208,16 @@ export function undo(context: CanvasRenderingContext2D,
 export function drawFromBuffer(context: CanvasRenderingContext2D,
                                canvas: HTMLCanvasElement,
                                offset: Coord,
-                               buffer: HTMLCanvasElement) {
+                               buffer: HTMLCanvasElement,
+                               scale: number) {
     // Clear the current canvas and draw a window from the buffer according to
     // the current offset and canvas size.
     context.clearRect(0, 0, canvas.width, canvas.height);
-    context.drawImage(buffer, offset.x, offset.y, canvas.width, canvas.height,
-                      0, 0, canvas.width, canvas.height);
+    context.drawImage(buffer,
+                      offset.x, offset.y,
+                      canvas.width * scale, canvas.height * scale,
+                      0, 0,
+                      canvas.width, canvas.height);
 }
 
 // Pan on the canvas by the movement specified by movement. This essentially shifts
