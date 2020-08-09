@@ -50,7 +50,6 @@ function Paint(props: PaintProps) {
     const [ canToggle, setCanToggle ] = useState(true);
     const [ canUndo, setCanUndo ] = useState(false);
     const [ lastSend, setLastSend ] = useState(0);
-    const [ selfStore, setSelfStore ] = useState(false);
 
     const canvasRef = useCallback(ref => { if (ref !== null) { setCanvas(ref); } }, [setCanvas]);
 
@@ -83,13 +82,15 @@ function Paint(props: PaintProps) {
     const sendLoaded = () => { props.loaded(); }
 
     const storageHandler = (e: StorageEvent) => {
-        if (e.key == 'stack' && !selfStore) {
-            debug('different instance wrote to local storage; locking');
-            setSelfStore(false);
-            // setStack(JSON.parse(e.newValue) || []);
-            setCannotDraw(true);
-            setCanUndo(false);
-            setCanToggle(false);
+        if (!document.hasFocus()) {
+            debug(`STORAGE: ${e.key}`);
+            if (e.key == 'stack') {
+                debug('different instance wrote to local storage; locking');
+                // setStack(JSON.parse(e.newValue) || []);
+                setCannotDraw(true);
+                setCanUndo(false);
+                setCanToggle(false);
+            }
         }
     };
 
@@ -131,8 +132,6 @@ function Paint(props: PaintProps) {
         const storage = window.localStorage;
 
         const jsonStack = JSON.stringify(stack);
-
-        setSelfStore(true);
 
         storage.setItem('stack', jsonStack);
         debug('stackdata length:');
