@@ -210,12 +210,17 @@ export function drawFromBuffer(context: CanvasRenderingContext2D,
                                offset: Coord,
                                buffer: HTMLCanvasElement,
                                scale: number) {
-    // Clear the current canvas and draw a window from the buffer according to
+    const scaledWidth  = canvas.width  * scale,
+          scaledHeight = canvas.height * scale;
+    const scaledOffsetX = offset.x + 0.5 * (canvas.width  - scaledWidth),
+          scaledOffsetY = offset.y + 0.5 * (canvas.height - scaledHeight);
+
+    // Clear the current canvas and draw a scaled window from the buffer according to
     // the current offset and canvas size.
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.drawImage(buffer,
-                      offset.x, offset.y,
-                      canvas.width * scale, canvas.height * scale,
+                      scaledOffsetX, scaledOffsetY,
+                      scaledWidth, scaledHeight,
                       0, 0,
                       canvas.width, canvas.height);
 }
@@ -224,13 +229,18 @@ export function drawFromBuffer(context: CanvasRenderingContext2D,
 // the offset of canvas from the top-left corner of buffer, with some checks to ensure
 // that the resulting movement does not place the canvas beyond the bounds of buffer.
 export function panCanvas(canvas: HTMLCanvasElement, buffer: HTMLCanvasElement,
-                          canvasOffset: Coord, movement: Coord) {
+                          canvasOffset: Coord, movement: Coord, scale: number) {
     canvasOffset.x -= movement.x;
     canvasOffset.y -= movement.y;
 
+    const scaledWidth  = canvas.width  * scale,
+          scaledHeight = canvas.height * scale;
+    const scaledOffsetX = canvasOffset.x + 0.5 * (canvas.width  - scaledWidth),
+          scaledOffsetY = canvasOffset.y + 0.5 * (canvas.height - scaledHeight);
+
     const bufferRect = { sx: 0, sy: 0, width: buffer.width, height: buffer.height };
-    const canvasRect = { sx: canvasOffset.x, sy: canvasOffset.y,
-                         width: canvas.width, height: canvas.height };
+    const canvasRect = { sx: scaledOffsetX, sy: scaledOffsetY,
+                         width: scaledWidth, height: scaledHeight };
 
     // If the attempted pan results in moving the canvas beyond the buffer's bounds,
     // reverse the offending movement.
