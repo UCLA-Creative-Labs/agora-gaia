@@ -382,7 +382,7 @@ function Paint(props: PaintProps) {
                                 const end: Coord = { x: e.clientX - bounds.left,
                                                      y: e.clientY - bounds.top };
                                 context.strokeStyle = currentCoordPath.current.color;
-                                drawLine(context, mousePos.current, end, currentCoordPath.current.width);
+                                drawLine(context, mousePos.current, end, currentCoordPath.current.width / scale.current);
 
                                 const scaledWidth  = canvas.width  * scale.current,
                                       scaledHeight = canvas.height * scale.current;
@@ -493,7 +493,7 @@ function Paint(props: PaintProps) {
 
                             if (isDrawing.current) {
                                 context.strokeStyle = currentCoordPath.current.color;
-                                drawLine(context, touchPos.current, lastTouchPos, currentCoordPath.current.width);
+                                drawLine(context, touchPos.current, lastTouchPos, currentCoordPath.current.width / scale.current);
 
                                 const scaledWidth  = canvas.width  * scale.current,
                                       scaledHeight = canvas.height * scale.current;
