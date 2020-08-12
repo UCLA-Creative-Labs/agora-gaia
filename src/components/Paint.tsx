@@ -296,11 +296,16 @@ function Paint(props: PaintProps) {
                         const bounds = canvas.getBoundingClientRect();
 
                         // Calculate the mouse position relative to the buffer
+                        const scaledWidth  = canvas.width  * scale.current,
+                              scaledHeight = canvas.height * scale.current;
+                        const scaledOffsetX = canvasOffset.x + 0.5 * (canvas.width  - scaledWidth),
+                              scaledOffsetY = canvasOffset.y + 0.5 * (canvas.height - scaledHeight);
+
                         mousePos.current = { x: e.clientX - bounds.left,
                                              y: e.clientY - bounds.top };
                         isDrawing.current = true;
-                        currentCoordPath.current.pos = [ { x: mousePos.current.x + canvasOffset.x,
-                                                           y: mousePos.current.y + canvasOffset.y } ];
+                        currentCoordPath.current.pos = [ { x: scale.current * mousePos.current.x + scaledOffsetX,
+                                                           y: scale.current * mousePos.current.y + scaledOffsetY } ];
                         coordPathLen.current = 0;
                         debug('start draw: ' + mousePos.current.x + ', ' + mousePos.current.y);
                         setCanUndo(false);
@@ -379,8 +384,12 @@ function Paint(props: PaintProps) {
                                 context.strokeStyle = currentCoordPath.current.color;
                                 drawLine(context, mousePos.current, end, currentCoordPath.current.width);
 
-                                currentCoordPath.current.pos.push({ x: end.x + canvasOffset.x, 
-                                                                    y: end.y + canvasOffset.y });
+                                const scaledWidth  = canvas.width  * scale.current,
+                                      scaledHeight = canvas.height * scale.current;
+                                const scaledOffsetX = canvasOffset.x + 0.5 * (canvas.width  - scaledWidth),
+                                      scaledOffsetY = canvasOffset.y + 0.5 * (canvas.height - scaledHeight);
+                                currentCoordPath.current.pos.push({ x: scale.current * end.x + scaledOffsetX, 
+                                                                    y: scale.current * end.y + scaledOffsetY });
                                 coordPathLen.current += distance(mousePos.current, end);
 
                                 if (props.maxStrokeLen && coordPathLen.current >= props.maxStrokeLen) {
@@ -411,9 +420,14 @@ function Paint(props: PaintProps) {
                             return;
                         }
 
+                        const scaledWidth  = canvas.width  * scale.current,
+                              scaledHeight = canvas.height * scale.current;
+                        const scaledOffsetX = canvasOffset.x + 0.5 * (canvas.width  - scaledWidth),
+                              scaledOffsetY = canvasOffset.y + 0.5 * (canvas.height - scaledHeight);
+
                         isDrawing.current = true;
-                        currentCoordPath.current.pos = [ { x: touchPos.current.x + canvasOffset.x,
-                                                           y: touchPos.current.y + canvasOffset.y } ];
+                        currentCoordPath.current.pos = [ { x: scale.current * touchPos.current.x + scaledOffsetX,
+                                                           y: scale.current * touchPos.current.y + scaledOffsetY } ];
                         coordPathLen.current = 0;
                         debug('start draw: ' + touchPos.current.x + ', ' + touchPos.current.y);
                         setCanUndo(false);
@@ -481,8 +495,14 @@ function Paint(props: PaintProps) {
                                 context.strokeStyle = currentCoordPath.current.color;
                                 drawLine(context, touchPos.current, lastTouchPos, currentCoordPath.current.width);
 
-                                currentCoordPath.current.pos.push({ x: lastTouchPos.x + canvasOffset.x,
-                                                                    y: lastTouchPos.y + canvasOffset.y });
+                                const scaledWidth  = canvas.width  * scale.current,
+                                      scaledHeight = canvas.height * scale.current;
+                                const scaledOffsetX = canvasOffset.x + 0.5 * (canvas.width  - scaledWidth),
+                                      scaledOffsetY = canvasOffset.y + 0.5 * (canvas.height - scaledHeight);
+
+
+                                currentCoordPath.current.pos.push({ x: scale.current * lastTouchPos.x + scaledOffsetX,
+                                                                    y: scale.current * lastTouchPos.y + scaledOffsetY });
                                 coordPathLen.current += distance(touchPos.current, lastTouchPos);
 
                                 if (props.maxStrokeLen && coordPathLen.current >= props.maxStrokeLen) {
