@@ -1,5 +1,5 @@
 import {
-    Coord, distance,
+    Coord, distance, clamp,
     rectOutOfBoundsX, rectOutOfBoundsY
 } from './MathUtils';
 
@@ -212,14 +212,13 @@ export function drawFromBuffer(context: CanvasRenderingContext2D,
                                scale: number) {
     const scaledWidth  = canvas.width  * scale,
           scaledHeight = canvas.height * scale;
-    const scaledOffsetX = offset.x + 0.5 * (canvas.width  - scaledWidth),
-          scaledOffsetY = offset.y + 0.5 * (canvas.height - scaledHeight);
+    const scaledOffset: Coord = getScaledOffset(offset, scale, canvas, buffer);
 
     // Clear the current canvas and draw a scaled window from the buffer according to
     // the current offset and canvas size.
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.drawImage(buffer,
-                      scaledOffsetX, scaledOffsetY,
+                      scaledOffset.x, scaledOffset.y,
                       scaledWidth, scaledHeight,
                       0, 0,
                       canvas.width, canvas.height);
@@ -230,25 +229,39 @@ export function drawFromBuffer(context: CanvasRenderingContext2D,
 // that the resulting movement does not place the canvas beyond the bounds of buffer.
 export function panCanvas(canvas: HTMLCanvasElement, buffer: HTMLCanvasElement,
                           canvasOffset: Coord, movement: Coord, scale: number) {
-    canvasOffset.x -= movement.x;
-    canvasOffset.y -= movement.y;
+    const scaledMovement: Coord = {
+        x: movement.x * scale,
+        y: movement.y * scale
+    }
 
-    const scaledWidth  = canvas.width  * scale,
-          scaledHeight = canvas.height * scale;
-    const scaledOffsetX = canvasOffset.x + 0.5 * (canvas.width  - scaledWidth),
-          scaledOffsetY = canvasOffset.y + 0.5 * (canvas.height - scaledHeight);
+    canvasOffset.x -= scaledMovement.x;
+    canvasOffset.y -= scaledMovement.y;
 
     const bufferRect = { sx: 0, sy: 0, width: buffer.width, height: buffer.height };
-    const canvasRect = { sx: scaledOffsetX, sy: scaledOffsetY,
-                         width: scaledWidth, height: scaledHeight };
+    const canvasRect = { sx: canvasOffset.x, sy: canvasOffset.y,
+                         width: canvas.width, height: canvas.height };
 
     // If the attempted pan results in moving the canvas beyond the buffer's bounds,
     // reverse the offending movement.
     if (rectOutOfBoundsX(canvasRect, bufferRect))
-        canvasOffset.x += movement.x;
+        canvasOffset.x += scaledMovement.x;
     if (rectOutOfBoundsY(canvasRect, bufferRect))
-        canvasOffset.y += movement.y;
+        canvasOffset.y += scaledMovement.y;
 }
+
+// Get scaled offset coords
+export function getScaledOffset(offset: Coord, scale: number,
+                                canvas: HTMLCanvasElement, buffer: HTMLCanvasElement): Coord {
+    const scaledWidth  = canvas.width  * scale,
+          scaledHeight = canvas.height * scale;
+    return {
+        x: clamp(offset.x + 0.5 * (canvas.width  - scaledWidth),
+                                0, buffer.width - scaledWidth),
+        y: clamp(offset.y + 0.5 * (canvas.height - scaledHeight),
+                                0, buffer.height - scaledHeight)
+    };
+}
+
 
 // Does a deep check to see if two paths are equal. That is, iterates through each
 // coordinate in both paths and checks if their x and y fields are equal.
