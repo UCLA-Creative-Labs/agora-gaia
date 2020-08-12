@@ -62,6 +62,8 @@ function Paint(props: PaintProps) {
     const mousePos = useRef<Coord>({ x: 0, y: 0 });
     // To track touch position
     const touchPos = useRef<Coord>({ x: 0, y: 0});
+    // To track distance between last touches
+    const touchDist = useRef(0);
     // To track the length of the current coord path
     const coordPathLen = useRef(0);
     // Track what the canvas looks like on pan (faster than redrawing)
@@ -414,6 +416,17 @@ function Paint(props: PaintProps) {
                         const bounds = canvas.getBoundingClientRect();
                         touchPos.current = { x: e.touches[0].clientX - bounds.left,
                                              y: e.touches[0].clientY - bounds.top };
+
+                        if (e.touches.length > 1) {
+                            const touchCoords: Coord[] = [
+                                { x: e.touches[0].clientX, y: e.touches[0].clientY },
+                                { x: e.touches[1].clientX, y: e.touches[1].clientY }
+                            ];
+
+                            console.log("fired");
+                            touchDist.current = distance(touchCoords[0], touchCoords[1]);
+                        }
+
                         if (cannotDraw) {
                             isPanning.current = true;
                             debug('start pan');
@@ -440,8 +453,11 @@ function Paint(props: PaintProps) {
                             return;
                         }
 
+                        if (e.touches.length > 0) return; // To prevent drawing after a zoom
+
                         const bufferContext = buffer.getContext('2d');
 
+                        touchDist.current = 0;
                         touchPos.current = { x: 0, y: 0 }
                         isDrawing.current = false;
 
@@ -480,7 +496,19 @@ function Paint(props: PaintProps) {
                         const lastTouchPos: Coord = { x: e.touches[0].clientX - bounds.left,
                                                       y: e.touches[0].clientY - bounds.top };
 
-                        if (cannotDraw && isPanning.current) {
+                        if (e.touches.length == 2) { /* If zooming */
+                            const touchCoords: Coord[] = [
+                                { x: e.touches[0].clientX, y: e.touches[0].clientY },
+                                { x: e.touches[1].clientX, y: e.touches[1].clientY }
+                            ];
+
+                            const lastTouchDist = distance(touchCoords[0], touchCoords[1]);
+                            const touchDistDelta = lastTouchDist - touchDist.current;
+                            const newScale = clamp(scale.current - touchDistDelta * 0.002, 1, maxScale.current);
+                            scale.current = newScale;
+                            drawFromBuffer(context, canvas, canvasOffset, buffer, newScale);
+                            touchDist.current = lastTouchDist;
+                        } else if (cannotDraw && isPanning.current) { /* If panning */
                             const deltaX = lastTouchPos.x - touchPos.current.x;
                             const deltaY = lastTouchPos.y - touchPos.current.y;
 
@@ -488,7 +516,7 @@ function Paint(props: PaintProps) {
 
                             panCanvas(canvas, buffer, canvasOffset, movement, scale.current);
                             drawFromBuffer(context, canvas, canvasOffset, buffer, scale.current);
-                        } else {
+                        } else if (e.touches.length == 1) { /* If drawing */
                             const bufferContext = buffer.getContext('2d');
 
                             if (isDrawing.current) {
