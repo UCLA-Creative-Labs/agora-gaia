@@ -1,5 +1,5 @@
 import {
-    Coord, distance,
+    Coord, distance, clamp,
     rectOutOfBoundsX, rectOutOfBoundsY
 } from './MathUtils';
 
@@ -50,6 +50,7 @@ export interface CanvasProps {
     buffer?: HTMLCanvasElement,                 // The offscreen buffer itself
     canvasOffset?: Coord,                       // The offset of the canvas' top left corner
                                                 //  from that of the buffer canvas
+    canvasScale?: number,                       // The scale of the canvas
     currentCoordPath?: CoordPath,               // The path for the stroke being draw
     coordPathStack?: CoordPath[],               // The overall stack of paths
     cannotDraw?: boolean,                       // True if the user is to be prevented from drawing
@@ -207,21 +208,34 @@ export function undo(context: CanvasRenderingContext2D,
 export function drawFromBuffer(context: CanvasRenderingContext2D,
                                canvas: HTMLCanvasElement,
                                offset: Coord,
-                               buffer: HTMLCanvasElement) {
-    // Clear the current canvas and draw a window from the buffer according to
+                               buffer: HTMLCanvasElement,
+                               scale: number) {
+    const scaledWidth  = canvas.width  * scale,
+          scaledHeight = canvas.height * scale;
+    const scaledOffset: Coord = getScaledOffset(offset, scale, canvas, buffer);
+
+    // Clear the current canvas and draw a scaled window from the buffer according to
     // the current offset and canvas size.
     context.clearRect(0, 0, canvas.width, canvas.height);
-    context.drawImage(buffer, offset.x, offset.y, canvas.width, canvas.height,
-                      0, 0, canvas.width, canvas.height);
+    context.drawImage(buffer,
+                      scaledOffset.x, scaledOffset.y,
+                      scaledWidth, scaledHeight,
+                      0, 0,
+                      canvas.width, canvas.height);
 }
 
 // Pan on the canvas by the movement specified by movement. This essentially shifts
 // the offset of canvas from the top-left corner of buffer, with some checks to ensure
 // that the resulting movement does not place the canvas beyond the bounds of buffer.
 export function panCanvas(canvas: HTMLCanvasElement, buffer: HTMLCanvasElement,
-                          canvasOffset: Coord, movement: Coord) {
-    canvasOffset.x -= movement.x;
-    canvasOffset.y -= movement.y;
+                          canvasOffset: Coord, movement: Coord, scale: number) {
+    const scaledMovement: Coord = {
+        x: movement.x * scale,
+        y: movement.y * scale
+    }
+
+    canvasOffset.x -= scaledMovement.x;
+    canvasOffset.y -= scaledMovement.y;
 
     const bufferRect = { sx: 0, sy: 0, width: buffer.width, height: buffer.height };
     const canvasRect = { sx: canvasOffset.x, sy: canvasOffset.y,
@@ -230,10 +244,24 @@ export function panCanvas(canvas: HTMLCanvasElement, buffer: HTMLCanvasElement,
     // If the attempted pan results in moving the canvas beyond the buffer's bounds,
     // reverse the offending movement.
     if (rectOutOfBoundsX(canvasRect, bufferRect))
-        canvasOffset.x += movement.x;
+        canvasOffset.x += scaledMovement.x;
     if (rectOutOfBoundsY(canvasRect, bufferRect))
-        canvasOffset.y += movement.y;
+        canvasOffset.y += scaledMovement.y;
 }
+
+// Get scaled offset coords
+export function getScaledOffset(offset: Coord, scale: number,
+                                canvas: HTMLCanvasElement, buffer: HTMLCanvasElement): Coord {
+    const scaledWidth  = canvas.width  * scale,
+          scaledHeight = canvas.height * scale;
+    return {
+        x: clamp(offset.x + 0.5 * (canvas.width  - scaledWidth),
+                                0, buffer.width - scaledWidth),
+        y: clamp(offset.y + 0.5 * (canvas.height - scaledHeight),
+                                0, buffer.height - scaledHeight)
+    };
+}
+
 
 // Does a deep check to see if two paths are equal. That is, iterates through each
 // coordinate in both paths and checks if their x and y fields are equal.

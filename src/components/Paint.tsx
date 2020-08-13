@@ -13,10 +13,11 @@ import {
     drawAllCurvesFromStack,
     drawFromBuffer,
     panCanvas,
+    getScaledOffset,
     stackIncludesPath
 } from '../utils/PaintUtils';
 import {
-    Coord, distance,
+    Coord, distance, clamp,
     outOfBoundsX, outOfBoundsY,
     rectOutOfBoundsX, rectOutOfBoundsY
 } from '../utils/MathUtils';
@@ -62,12 +63,18 @@ function Paint(props: PaintProps) {
     const mousePos = useRef<Coord>({ x: 0, y: 0 });
     // To track touch position
     const touchPos = useRef<Coord>({ x: 0, y: 0});
+    // To track distance between last touches
+    const touchDist = useRef(0);
     // To track the length of the current coord path
     const coordPathLen = useRef(0);
     // Track what the canvas looks like on pan (faster than redrawing)
     const imageDataRef = useRef<ImageData>(null);
     // Track pan translation amount
     const tlate = useRef<Coord>({ x: 0, y: 0 });
+    // Track zoom scale
+    const scale = useRef(1);
+    // To calculate maximum zoom-out scale
+    const maxScale = useRef(1);
 
     // A tuple of a list of mouse positions and a number to represent the width
     // of the line being drawn.
@@ -81,6 +88,13 @@ function Paint(props: PaintProps) {
     const sendConnected = () => { props.connected(); }
     const sendLoaded = () => { props.loaded(); }
 
+    const setMaxScale = () => {
+        if (canvas.height > canvas.width)
+            maxScale.current = props.maxHeight / canvas.height;
+        else
+            maxScale.current = props.maxWidth / canvas.width;
+    }
+
     const storageHandler = (e: StorageEvent) => {
         if (!document.hasFocus()) {
             debug(`STORAGE: ${e.key}`);
@@ -92,6 +106,26 @@ function Paint(props: PaintProps) {
                 setCanToggle(false);
             }
         }
+    };
+
+    const onResize = () => {
+        const bufferRect = { sx: 0, sy: 0, width: buffer.width, height: buffer.height };
+
+        debug('resizing window');
+
+        if (outOfBoundsX(canvasOffset.x, bufferRect))
+            canvasOffset.x = bufferRect.sx - canvasOffset.x;
+        if (outOfBoundsX(canvasOffset.x + canvas.width, bufferRect))
+            canvasOffset.x = bufferRect.sx + bufferRect.width - canvas.width;
+
+        if (outOfBoundsY(canvasOffset.y, bufferRect))
+            canvasOffset.y = bufferRect.sy - canvasOffset.y;
+        if (outOfBoundsY(canvasOffset.y + canvas.width, bufferRect))
+            canvasOffset.y = bufferRect.sy + bufferRect.height - canvas.height;
+
+        setMaxScale();
+
+        drawFromBuffer(context, canvas, canvasOffset, buffer, scale.current);
     };
 
     // Called only on component mount
@@ -113,6 +147,7 @@ function Paint(props: PaintProps) {
     useEffect(() => {
         // setCanvas(canvasRef.current);
         if (!canvas) return;
+
         const context = canvas.getContext('2d');
         setContext(context);
 
@@ -121,7 +156,8 @@ function Paint(props: PaintProps) {
 
         debug('rerendering canvas');
 
-        drawFromBuffer(context, canvas, canvasOffset, buffer);
+        drawFromBuffer(context, canvas, canvasOffset, buffer, scale.current);
+        setMaxScale();
     }, [canvas]);
 
     useEffect(() => {
@@ -142,7 +178,7 @@ function Paint(props: PaintProps) {
 
     useEffect(() => {
         const bufferContext = buffer.getContext('2d');
-        if (!context || !bufferContext || !isStackEmpty) return;
+        if (!context || !bufferContext) return;
         debug('registering listeners');
 
         const localStack: CoordPath[] = JSON.parse(window.localStorage.getItem('stack')) || [];
@@ -150,7 +186,7 @@ function Paint(props: PaintProps) {
             setStack(localStack);
 
             drawAllCurvesFromStack(bufferContext, localStack, props.smoothness, props.thinning);
-            drawFromBuffer(context, canvas, canvasOffset, buffer);
+            drawFromBuffer(context, canvas, canvasOffset, buffer, scale.current);
         }
 
         const packageHandler = (data: CoordPath[]) => {
@@ -159,7 +195,7 @@ function Paint(props: PaintProps) {
             setStack(prevStack => [...prevStack, ...data]);
 
             drawAllCurvesFromStack(bufferContext, data, props.smoothness, props.thinning);
-            drawFromBuffer(context, canvas, canvasOffset, buffer);
+            drawFromBuffer(context, canvas, canvasOffset, buffer, scale.current);
 
             sendLoaded();
         };
@@ -168,7 +204,7 @@ function Paint(props: PaintProps) {
             debug('detected stroke from server');
             setStack(prevStack => [...prevStack, data]);
             drawCurveFromCoordPath(bufferContext, data, props.smoothness, props.thinning);
-            drawFromBuffer(context, canvas, canvasOffset, buffer);
+            drawFromBuffer(context, canvas, canvasOffset, buffer, scale.current);
         };
 
         const resetHandler = (data: any) => {
@@ -183,17 +219,15 @@ function Paint(props: PaintProps) {
         // FOR RESETING LOCAL STORAGE MAYBE DO THIS TWICE A DAY?
         SocketUtils.registerReset(resetHandler);
 
-        /* TODO: find out why this gets called immediately
         return () => {
             debug('unregistering listeners');
             // SocketUtils.unregisterDrawLimit(drawLimitHandler);
             // SocketUtils.unregisterHandshake(handshakeHandler);
-            // SocketUtils.unregisterPackage(packageHandler);
-            // SocketUtils.unregisterStroke(strokeHandler);
-            // SocketUtils.unregisterReset(resetHandler);
+            SocketUtils.unregisterPackage(packageHandler);
+            SocketUtils.unregisterStroke(strokeHandler);
+            SocketUtils.unregisterReset(resetHandler);
         }
-         */
-    }, [canvas, context, isStackEmpty]);
+    }, [canvas, context, isStackEmpty, scale.current]);
 
     useEffect(() => {
         const handshakeHandler = (data: SocketUtils.Handshake) => {
@@ -228,24 +262,6 @@ function Paint(props: PaintProps) {
             }, limit - time_diff)
         }
     }, [lastSend, handshake]);
-
-    const onResize = () => {
-        const bufferRect = { sx: 0, sy: 0, width: buffer.width, height: buffer.height };
-
-        debug('resizing window');
-
-        if (outOfBoundsX(canvasOffset.x, bufferRect))
-            canvasOffset.x = bufferRect.sx - canvasOffset.x;
-        if (outOfBoundsX(canvasOffset.x + canvas.width, bufferRect))
-            canvasOffset.x = bufferRect.sx + bufferRect.width - canvas.width;
-
-        if (outOfBoundsY(canvasOffset.y, bufferRect))
-            canvasOffset.y = bufferRect.sy - canvasOffset.y;
-        if (outOfBoundsY(canvasOffset.y + canvas.width, bufferRect))
-            canvasOffset.y = bufferRect.sy + bufferRect.height - canvas.height;
-
-        drawFromBuffer(context, canvas, canvasOffset, buffer);
-    };
 
     useEffect(() => {
         window.addEventListener('resize', onResize);
@@ -283,11 +299,15 @@ function Paint(props: PaintProps) {
                         const bounds = canvas.getBoundingClientRect();
 
                         // Calculate the mouse position relative to the buffer
+                        const scaledWidth  = canvas.width  * scale.current,
+                              scaledHeight = canvas.height * scale.current;
+                        const scaledOffset = getScaledOffset(canvasOffset, scale.current, canvas, buffer);
+
                         mousePos.current = { x: e.clientX - bounds.left,
                                              y: e.clientY - bounds.top };
                         isDrawing.current = true;
-                        currentCoordPath.current.pos = [ { x: mousePos.current.x + canvasOffset.x,
-                                                           y: mousePos.current.y + canvasOffset.y } ];
+                        currentCoordPath.current.pos = [ { x: scale.current * mousePos.current.x + scaledOffset.x,
+                                                           y: scale.current * mousePos.current.y + scaledOffset.y } ];
                         coordPathLen.current = 0;
                         debug('start draw: ' + mousePos.current.x + ', ' + mousePos.current.y);
                         setCanUndo(false);
@@ -338,7 +358,7 @@ function Paint(props: PaintProps) {
                         // Reset the path
                         currentCoordPath.current.pos = []
                         debug('redrawing buffer');
-                        drawFromBuffer(context, canvas, canvasOffset, buffer);
+                        drawFromBuffer(context, canvas, canvasOffset, buffer, scale.current);
                     }}
                     onMouseMove = {e => {
                         if (cannotDraw) {
@@ -353,8 +373,8 @@ function Paint(props: PaintProps) {
                         if (cannotDraw && isPanning.current) {
                             canvas.style.cursor = 'grabbing';
                             const movement = { x: e.movementX, y: e.movementY };
-                            panCanvas(canvas, buffer, canvasOffset, movement);
-                            drawFromBuffer(context, canvas, canvasOffset, buffer);
+                            panCanvas(canvas, buffer, canvasOffset, movement, scale.current);
+                            drawFromBuffer(context, canvas, canvasOffset, buffer, scale.current);
                         } else {
                             // const canvas = canvasRef.current;
                             const bounds = canvas.getBoundingClientRect();
@@ -364,10 +384,13 @@ function Paint(props: PaintProps) {
                                 const end: Coord = { x: e.clientX - bounds.left,
                                                      y: e.clientY - bounds.top };
                                 context.strokeStyle = currentCoordPath.current.color;
-                                drawLine(context, mousePos.current, end, currentCoordPath.current.width);
+                                drawLine(context, mousePos.current, end, currentCoordPath.current.width / scale.current);
 
-                                currentCoordPath.current.pos.push({ x: end.x + canvasOffset.x, 
-                                                                    y: end.y + canvasOffset.y });
+                                const scaledWidth  = canvas.width  * scale.current,
+                                      scaledHeight = canvas.height * scale.current;
+                                const scaledOffset = getScaledOffset(canvasOffset, scale.current, canvas, buffer);
+                                currentCoordPath.current.pos.push({ x: scale.current * end.x + scaledOffset.x, 
+                                                                    y: scale.current * end.y + scaledOffset.y });
                                 coordPathLen.current += distance(mousePos.current, end);
 
                                 if (props.maxStrokeLen && coordPathLen.current >= props.maxStrokeLen) {
@@ -392,15 +415,30 @@ function Paint(props: PaintProps) {
                         const bounds = canvas.getBoundingClientRect();
                         touchPos.current = { x: e.touches[0].clientX - bounds.left,
                                              y: e.touches[0].clientY - bounds.top };
+
+                        if (e.touches.length > 1) {
+                            const touchCoords: Coord[] = [
+                                { x: e.touches[0].clientX, y: e.touches[0].clientY },
+                                { x: e.touches[1].clientX, y: e.touches[1].clientY }
+                            ];
+
+                            console.log("fired");
+                            touchDist.current = distance(touchCoords[0], touchCoords[1]);
+                        }
+
                         if (cannotDraw) {
                             isPanning.current = true;
                             debug('start pan');
                             return;
                         }
 
+                        const scaledWidth  = canvas.width  * scale.current,
+                              scaledHeight = canvas.height * scale.current;
+                        const scaledOffset = getScaledOffset(canvasOffset, scale.current, canvas, buffer);
+
                         isDrawing.current = true;
-                        currentCoordPath.current.pos = [ { x: touchPos.current.x + canvasOffset.x,
-                                                           y: touchPos.current.y + canvasOffset.y } ];
+                        currentCoordPath.current.pos = [ { x: scale.current * touchPos.current.x + scaledOffset.x,
+                                                           y: scale.current * touchPos.current.y + scaledOffset.y } ];
                         coordPathLen.current = 0;
                         debug('start draw: ' + touchPos.current.x + ', ' + touchPos.current.y);
                         setCanUndo(false);
@@ -413,8 +451,11 @@ function Paint(props: PaintProps) {
                             return;
                         }
 
+                        if (e.touches.length > 0) return; // To prevent drawing after a zoom
+
                         const bufferContext = buffer.getContext('2d');
 
+                        touchDist.current = 0;
                         touchPos.current = { x: 0, y: 0 }
                         isDrawing.current = false;
 
@@ -444,7 +485,7 @@ function Paint(props: PaintProps) {
                         // Reset the path
                         currentCoordPath.current.pos = []
                         debug('redrawing buffer');
-                        drawFromBuffer(context, canvas, canvasOffset, buffer);
+                        drawFromBuffer(context, canvas, canvasOffset, buffer, scale.current);
                     }}
                     onTouchMove = {e => {
                         e.preventDefault();
@@ -453,23 +494,40 @@ function Paint(props: PaintProps) {
                         const lastTouchPos: Coord = { x: e.touches[0].clientX - bounds.left,
                                                       y: e.touches[0].clientY - bounds.top };
 
-                        if (cannotDraw && isPanning.current) {
+                        if (e.touches.length == 2) { /* If zooming */
+                            const touchCoords: Coord[] = [
+                                { x: e.touches[0].clientX, y: e.touches[0].clientY },
+                                { x: e.touches[1].clientX, y: e.touches[1].clientY }
+                            ];
+
+                            const lastTouchDist = distance(touchCoords[0], touchCoords[1]);
+                            const touchDistDelta = lastTouchDist - touchDist.current;
+                            const newScale = clamp(scale.current - touchDistDelta * 0.002, 1, maxScale.current);
+                            scale.current = newScale;
+                            drawFromBuffer(context, canvas, canvasOffset, buffer, newScale);
+                            touchDist.current = lastTouchDist;
+                        } else if (cannotDraw && isPanning.current) { /* If panning */
                             const deltaX = lastTouchPos.x - touchPos.current.x;
                             const deltaY = lastTouchPos.y - touchPos.current.y;
 
                             const movement = { x: deltaX, y: deltaY };
 
-                            panCanvas(canvas, buffer, canvasOffset, movement);
-                            drawFromBuffer(context, canvas, canvasOffset, buffer);
-                        } else {
+                            panCanvas(canvas, buffer, canvasOffset, movement, scale.current);
+                            drawFromBuffer(context, canvas, canvasOffset, buffer, scale.current);
+                        } else if (e.touches.length == 1) { /* If drawing */
                             const bufferContext = buffer.getContext('2d');
 
                             if (isDrawing.current) {
                                 context.strokeStyle = currentCoordPath.current.color;
-                                drawLine(context, touchPos.current, lastTouchPos, currentCoordPath.current.width);
+                                drawLine(context, touchPos.current, lastTouchPos, currentCoordPath.current.width / scale.current);
 
-                                currentCoordPath.current.pos.push({ x: lastTouchPos.x + canvasOffset.x,
-                                                                    y: lastTouchPos.y + canvasOffset.y });
+                                const scaledWidth  = canvas.width  * scale.current,
+                                      scaledHeight = canvas.height * scale.current;
+                                const scaledOffset = getScaledOffset(canvasOffset, scale.current, canvas, buffer);
+
+
+                                currentCoordPath.current.pos.push({ x: scale.current * lastTouchPos.x + scaledOffset.x,
+                                                                    y: scale.current * lastTouchPos.y + scaledOffset.y });
                                 coordPathLen.current += distance(touchPos.current, lastTouchPos);
 
                                 if (props.maxStrokeLen && coordPathLen.current >= props.maxStrokeLen) {
@@ -482,7 +540,9 @@ function Paint(props: PaintProps) {
                         touchPos.current = lastTouchPos;
                     }}
                     onWheel={e => {
-                        // TODO: Use e.deltaY to zoom into the canvas?
+                        const newScale = clamp(scale.current + e.deltaY * 0.001, 1, maxScale.current);
+                        scale.current = newScale;
+                        drawFromBuffer(context, canvas, canvasOffset, buffer, newScale);
                     }}>
                     {'Your browser doesn\'t support <canvas> elements :('}
                 </canvas>
@@ -498,6 +558,7 @@ function Paint(props: PaintProps) {
                     cannotDraw={cannotDraw}
                     canToggle={canToggle}
                     canUndo={canUndo}
+                    canvasScale={scale.current}
                     paintProps={props}
                     toggleCannotDraw={toggleCannotDraw}
                     popStack={popStack}/>
