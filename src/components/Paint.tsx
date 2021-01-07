@@ -546,6 +546,7 @@ function Paint(props: PaintProps) {
                     }}>
                     {'Your browser doesn\'t support <canvas> elements :('}
                 </canvas>
+              <div id={'draw-controls-div'}>
                 <DrawControls
                     side={Side.Right}
                     context={context}
@@ -562,12 +563,13 @@ function Paint(props: PaintProps) {
                     paintProps={props}
                     toggleCannotDraw={toggleCannotDraw}
                     popStack={popStack}/>
+              <ColorButtons
+                  context={context}
+                  currentCoordPath={currentCoordPath.current}
+                  colors={colors} />
+              </div>
             </div>
             <br />
-            <ColorButtons
-                context={context}
-                currentCoordPath={currentCoordPath.current}
-                colors={colors} />
         </div>
     )
 }

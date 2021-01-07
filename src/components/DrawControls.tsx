@@ -94,29 +94,6 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
     case Side.Left:
       return (
         <span id='draw-controls'>
-          <button
-            onClick={_ => {
-              if (props.currentCoordPath.width < 15) {
-                props.currentCoordPath.width += 1;
-                setWidth(prev => prev + 1);
-              }
-            }}
-            className='side-btn'
-            id='zoomin-btn'>
-            <img src={ZoomInImg} style={{ 'width': '30px', 'height': '30px' }} />
-          </button>
-          <p id='width-disp'>{width}</p>
-          <button
-            onClick={_ => {
-              if (props.currentCoordPath.width > 1) {
-                props.currentCoordPath.width -= 1;
-                setWidth(prev => prev - 1);
-              }
-            }}
-            className='side-btn'
-            id='zoomout-btn'>
-            <img src={ZoomOutImg} style={{ 'width': '30px', 'height': '30px' }} />
-          </button>
         </span>
       );
       break;
@@ -143,6 +120,29 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
               className={'side-btn' + (cannotToggle ? ' disabled' : '')}
             id='brush-btn'>
             <img src={drawToggleBtn} style={{ 'width': '30px', 'height': '30px' }} />
+          </button>
+          <button
+            onClick={_ => {
+              if (props.currentCoordPath.width < 15) {
+                props.currentCoordPath.width += 1;
+                setWidth(prev => prev + 1);
+              }
+            }}
+            className='side-btn'
+            id='zoomin-btn'>
+            <img src={ZoomInImg} style={{ 'width': '30px', 'height': '30px' }} />
+          </button>
+          <p id='width-disp'>{width}</p>
+          <button
+            onClick={_ => {
+              if (props.currentCoordPath.width > 1) {
+                props.currentCoordPath.width -= 1;
+                setWidth(prev => prev - 1);
+              }
+            }}
+            className='side-btn'
+            id='zoomout-btn'>
+            <img src={ZoomOutImg} style={{ 'width': '30px', 'height': '30px' }} />
           </button>
         </span>
       );

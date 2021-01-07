@@ -37,26 +37,7 @@ function App() {
                 lineWidth={2}
                 smoothness={2}
                 thinning={0.3}
-                // The 16 4-bit ANSI colors
-                colors={[
-                    'white',
-                    'lightgray',
-                    'gray',
-                    'black',
-                    'maroon',
-                    'red',
-                    'fuchsia',
-                    'purple',
-                    'navy',
-                    'blue',
-                    'aqua',
-                    'teal',
-                    'green',
-                    'lime',
-                    'olive',
-                    'yellow',
-                ]}
-                maxStrokeLen={0}
+                maxStrokeLen={200}
                 rerenderAll={true} // Warning: slows down quickly when true
             />
         </div>
