@@ -1,10 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { SketchPicker } from 'react-color';
 
 import {
   Side,
   CanvasProps, DrawControlProps,
   undo, drawFromBuffer
 } from '../utils/PaintUtils';
+import {
+    isLocalStorageAvailable
+} from '../utils/StorageUtils';
 import { debug } from '../utils/Utils';
 import * as SocketUtils from '../utils/SocketUtils';
 
@@ -15,6 +19,7 @@ import ZoomInImg from '../assets/icons/add-black-18dp.svg';
 import ZoomOutImg from '../assets/icons/remove-black-18dp.svg';
 import BrushImg from '../assets/icons/brush-black-18dp.svg';
 import PanImg from '../assets/icons/pan_tool-black-18dp.svg';
+import PaletteImg from '../assets/icons/palette-black-18dp.svg';
 
 // Component to hold draw control buttons. On the left are buttons to control
 // the width of the user's stroke; on the right are buttons to undo or to toggle
@@ -24,6 +29,10 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
   const [drawToggleBtn, setDrawToggleBtn] = useState(PanImg);
   const [cannotToggle, setCannotToggle] = useState(false);
   const [undoDisabled, setUndoDisabled] = useState(true);
+  const [selectedColor, setSelectedColor] = useState({ background: 'black' });
+  const [displayColorPicker, setDisplayColorPicker] = useState(false);
+
+  const previewRef = useRef(null);
 
   // Set the image in the toggle button according to whether or not the user can
   // draw.
@@ -89,10 +98,26 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
         }
     }, []);
 
+    useEffect(() => {
+      const preview = previewRef.current;
+      if (!preview || !preview.getContext) return;
+
+      const previewCtx = preview.getContext('2d');
+      const x = preview.width / 2, y = preview.height / 2;
+      const r = 2 * width / 3;
+      previewCtx.clearRect(0, 0, preview.width, preview.height);
+      previewCtx.beginPath();
+      previewCtx.arc(x, y, r, 0, 2 * Math.PI, false);
+      previewCtx.lineWidth = 0;
+      previewCtx.fillStyle = selectedColor.background;
+      previewCtx.fill();
+    }, [previewRef.current, width, selectedColor]);
+
     // Display a particular set of buttons based on the side this component is on.
+  let buttons;
   switch (props.side) {
     case Side.Left:
-      return (
+      buttons = (
         <span id='draw-controls'>
           <button
             onClick={_ => {
@@ -101,11 +126,17 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
                 setWidth(prev => prev + 1);
               }
             }}
-            className='side-btn'
+            className={'side-btn' + ((props.tutorialPhase == 5) ? ' foreground-btn' : '')}
             id='zoomin-btn'>
             <img src={ZoomInImg} style={{ 'width': '30px', 'height': '30px' }} />
           </button>
-          <p id='width-disp'>{width}</p>
+          <canvas
+            ref={previewRef}
+            style={{
+              marginTop: '20px'
+            }}
+            width={20} height={20}
+          ></canvas>
           <button
             onClick={_ => {
               if (props.currentCoordPath.width > 1) {
@@ -113,7 +144,7 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
                 setWidth(prev => prev - 1);
               }
             }}
-            className='side-btn'
+            className={'side-btn' + ((props.tutorialPhase == 5) ? ' foreground-btn' : '')}
             id='zoomout-btn'>
             <img src={ZoomOutImg} style={{ 'width': '30px', 'height': '30px' }} />
           </button>
@@ -121,7 +152,8 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
       );
       break;
     case Side.Right:
-      return (
+    default:
+      buttons = (
         <span id='draw-controls'>
           <button
             onClick={_ => {
@@ -130,7 +162,7 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
                     setUndoDisabled(true);
                 }
             }}
-            className={'side-btn' + (undoDisabled ? ' disabled' : '')}
+            className={'side-btn' + (undoDisabled ? ' disabled' : '') + ((props.tutorialPhase == 3) ? ' foreground-btn' : '')}
             id='undo-btn'>
             <img src={UndoImg} style={{ 'width': '30px', 'height': '30px' }} />
           </button>
@@ -140,14 +172,56 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
 
               props.toggleCannotDraw();
             }}
-              className={'side-btn' + (cannotToggle ? ' disabled' : '')}
+              className={'side-btn' + (cannotToggle ? ' disabled' : '') + ((props.tutorialPhase == 2) ? ' foreground-btn' : '')}
             id='brush-btn'>
             <img src={drawToggleBtn} style={{ 'width': '30px', 'height': '30px' }} />
+          </button>
+          <button
+            onClick={_ => { setDisplayColorPicker(old => !old) }}
+            className={'side-btn' + ((props.tutorialPhase == 4 || displayColorPicker) ? ' foreground-btn' : '')}
+            style = {{
+              border: `6px solid ${selectedColor.background}`,
+              padding: '5px'
+            }}>
+            <img src={PaletteImg} style={{ 'width': '30px', 'height': '30px' }} />
           </button>
         </span>
       );
       break;
   }
+
+  return (
+    <>
+      <div
+        className={'modal'}
+        style={{
+          visibility: displayColorPicker ? 'visible' : 'hidden',
+          opacity: displayColorPicker ? 1 : 0
+        }}
+        onClick={_ => {
+          setDisplayColorPicker(old => !old);
+        }}
+      >
+        <div
+            onClick={e => {
+                e.stopPropagation();
+                e.nativeEvent.stopImmediatePropagation();
+            }}
+        >
+          <SketchPicker
+            color={selectedColor.background}
+            width={500}
+            onChange={(color, _) => setSelectedColor({ background: color.hex })}
+            onChangeComplete={(color, _) => {
+              props.context.strokeStyle = color.hex;
+              props.currentCoordPath.color = color.hex;
+            }}
+          />
+        </div>
+      </div>
+      {buttons}
+    </>
+  );
 }
 
 export default DrawControls;

@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
 
-import ColorButtons from './ColorButtons';
 import DrawControls from './DrawControls';
 import Timer        from './Timer';
 
@@ -51,6 +50,7 @@ function Paint(props: PaintProps) {
     const [ canToggle, setCanToggle ] = useState(true);
     const [ canUndo, setCanUndo ] = useState(false);
     const [ lastSend, setLastSend ] = useState(0);
+    const [tutorialPhase, setTutorialPhase] = useState(-1);
 
     const canvasRef = useCallback(ref => { if (ref !== null) { setCanvas(ref); } }, [setCanvas]);
 
@@ -84,6 +84,8 @@ function Paint(props: PaintProps) {
 
     // If the element doesn't have a colors property, default to black + RGB
     const colors: string[] = props.colors || [ 'black', 'red', 'green', 'blue' ]
+
+    const tutorialStorageKey = 'tutorial_shown';
 
     const sendConnected = () => { props.connected(); }
     const sendLoaded = () => { props.loaded(); }
@@ -136,6 +138,13 @@ function Paint(props: PaintProps) {
         };
 
         SocketUtils.registerDrawLimit(drawLimitHandler);
+
+        if (!isLocalStorageAvailable()) setTutorialPhase(0);
+
+        const storage = window.localStorage;
+        const storedBool = JSON.parse(storage.getItem(tutorialStorageKey));
+        if (!storedBool)
+          setTutorialPhase(0);
 
         window.addEventListener('storage', storageHandler);
 
@@ -271,12 +280,92 @@ function Paint(props: PaintProps) {
         };
     }, [context, canvas, buffer]);
 
+    const renderPhase = () => {
+      let phase;
+      switch(tutorialPhase) {
+        case 0:
+          phase = (<>
+            <h1>Welcome to Agora!</h1>
+            <h3>Agora is a collaborative canvas, proudly brought to you by Creative Labs.</h3>
+            <h3>Here's a quick tutorial on how to use it.</h3>
+            <h4 onClick={() => setTutorialPhase(old => old+1)}>Next ➜</h4>
+          </>);
+          break;
+        case 1:
+          phase = (<>
+            <h2>The Canvas</h2>
+            <h3>The Canvas is where you'll create your masterpieces and see others' work as well. You can zoom in or out by scrolling or using the touchpad.
+            </h3>
+            <h3>
+              Each time you draw, you will only be able to draw a single stroke of limited length. Once you finish drawing, you will need to wait some seconds before you can draw another stroke, as indicated by the timer at the top of the page.
+            </h3>
+            <h4 onClick={() => setTutorialPhase(old => old+1)}>Next ➜</h4>
+          </>);
+          break;
+        case 2:
+          phase = (<>
+            <h2>Drawing</h2>
+            <h3>This is the Draw/Pan Toggle Button.</h3>
+            <h3>The paintbrush icon indicates you can draw. Clicking it will switch it to the hand icon, indicating you can now pan across the screen. Use the button to toggle between these two modes.</h3>
+            <h4 onClick={() => setTutorialPhase(old => old+1)}>Next ➜</h4>
+          </>);
+          break;
+        case 3:
+          phase = (<>
+            <h2>Undoing Actions</h2>
+            <h3>This is the Undo Button.</h3>
+            <h3>If you make a mistake, you'll have a few seconds to undo it before the website locks the stroke into place. Think before you draw and use your turn wisely!</h3>
+            <h4 onClick={() => setTutorialPhase(old => old+1)}>Next ➜</h4>
+          </>);
+          break;
+        case 4:
+          phase = (<>
+            <h2>The Palette</h2>
+            <h3>This is the color of your paintbrush.</h3>
+            <h3>Click it to display a color picker, where you can choose the perfect color for your needs. Click the button again or click anywhere outside of the color picker window to hide it.</h3>
+            <h4 onClick={() => setTutorialPhase(old => old+1)}>Next ➜</h4>
+          </>);
+          break;
+        case 5:
+          phase = (<>
+            <h2>Brush Size</h2>
+            <h3>These are the brush size controls</h3>
+            <h3>Use these buttons to increase or decrease the size of your brush.</h3>
+            <h4 onClick={() => setTutorialPhase(old => old+1)}>Next ➜</h4>
+          </>);
+          break;
+        case 6:
+          phase = (<>
+            <h1>Happy drawing!</h1>
+            <h4 onClick={() => {
+              setTutorialPhase(-1);
+              if (isLocalStorageAvailable())
+                window.localStorage.setItem(tutorialStorageKey, String(true));
+            }}>Finish ➜</h4>
+          </>);
+          break;
+        default:
+          break;
+      }
+
+      return phase;
+    }
+
     return (
         <div id='all-wrapper'>
+          { (tutorialPhase >= 0 && tutorialPhase <= 6) ?
+            <div
+              className={'modal'}>
+              <div className={'tutorial-text'}>
+                {renderPhase()}
+              </div>
+            </div> : null }
             <div id='canvas-wrapper'>
                 <DrawControls
                     side={Side.Left}
-                    currentCoordPath={currentCoordPath.current} />
+                    currentCoordPath={currentCoordPath.current}
+                    tutorialPhase={tutorialPhase}
+                />
                 <Timer
                     limit={limit}
                     lastSend={lastSend} />
@@ -546,6 +635,7 @@ function Paint(props: PaintProps) {
                     }}>
                     {'Your browser doesn\'t support <canvas> elements :('}
                 </canvas>
+              <div id={'draw-controls-div'}>
                 <DrawControls
                     side={Side.Right}
                     context={context}
@@ -561,13 +651,12 @@ function Paint(props: PaintProps) {
                     canvasScale={scale.current}
                     paintProps={props}
                     toggleCannotDraw={toggleCannotDraw}
-                    popStack={popStack}/>
+                    popStack={popStack}
+                    tutorialPhase={tutorialPhase}
+                />
+              </div>
             </div>
             <br />
-            <ColorButtons
-                context={context}
-                currentCoordPath={currentCoordPath.current}
-                colors={colors} />
         </div>
     )
 }

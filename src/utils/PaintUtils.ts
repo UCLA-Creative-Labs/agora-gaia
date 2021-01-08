@@ -58,6 +58,7 @@ export interface CanvasProps {
     paintProps?: PaintProps,                    // Holds the properties of the Pain component
     popStack?: () => void                       // A function specifically for popping the stroke stack
                                                 //  in the parent
+    tutorialPhase?: number                      // The phase of the tutorial the user is in
 }
 
 // Interface to hold properties for draw control buttons (e.g. undo, toggle).
