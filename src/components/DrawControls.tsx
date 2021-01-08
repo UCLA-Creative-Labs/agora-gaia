@@ -19,6 +19,7 @@ import ZoomInImg from '../assets/icons/add-black-18dp.svg';
 import ZoomOutImg from '../assets/icons/remove-black-18dp.svg';
 import BrushImg from '../assets/icons/brush-black-18dp.svg';
 import PanImg from '../assets/icons/pan_tool-black-18dp.svg';
+import PaletteImg from '../assets/icons/palette-black-18dp.svg';
 
 // Component to hold draw control buttons. On the left are buttons to control
 // the width of the user's stroke; on the right are buttons to undo or to toggle
@@ -178,7 +179,12 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
           <button
             onClick={_ => { setDisplayColorPicker(old => !old) }}
             className={'side-btn' + ((props.tutorialPhase == 4 || displayColorPicker) ? ' foreground-btn' : '')}
-            style = {selectedColor} />
+            style = {{
+              border: `6px solid ${selectedColor.background}`,
+              padding: '5px'
+            }}>
+            <img src={PaletteImg} style={{ 'width': '30px', 'height': '30px' }} />
+          </button>
         </span>
       );
       break;
@@ -192,16 +198,26 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
           visibility: displayColorPicker ? 'visible' : 'hidden',
           opacity: displayColorPicker ? 1 : 0
         }}
+        onClick={_ => {
+          setDisplayColorPicker(old => !old);
+        }}
       >
-        <SketchPicker
-          color={selectedColor.background}
-          width={500}
-          onChange={(color, _) => setSelectedColor({ background: color.hex })}
-          onChangeComplete={(color, _) => {
-            props.context.strokeStyle = color.hex;
-            props.currentCoordPath.color = color.hex;
-          }}
-        />
+        <div
+            onClick={e => {
+                e.stopPropagation();
+                e.nativeEvent.stopImmediatePropagation();
+            }}
+        >
+          <SketchPicker
+            color={selectedColor.background}
+            width={500}
+            onChange={(color, _) => setSelectedColor({ background: color.hex })}
+            onChangeComplete={(color, _) => {
+              props.context.strokeStyle = color.hex;
+              props.currentCoordPath.color = color.hex;
+            }}
+          />
+        </div>
       </div>
       {buttons}
     </>
