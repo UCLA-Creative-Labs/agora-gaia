@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react';
 
-import ColorButtons from './ColorButtons';
 import DrawControls from './DrawControls';
 import Timer        from './Timer';
 
@@ -563,10 +562,6 @@ function Paint(props: PaintProps) {
                     paintProps={props}
                     toggleCannotDraw={toggleCannotDraw}
                     popStack={popStack}/>
-              <ColorButtons
-                  context={context}
-                  currentCoordPath={currentCoordPath.current}
-                  colors={colors} />
               </div>
             </div>
             <br />

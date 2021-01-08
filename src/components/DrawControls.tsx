@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { SketchPicker } from 'react-color';
 
 import {
   Side,
@@ -24,6 +25,8 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
   const [drawToggleBtn, setDrawToggleBtn] = useState(PanImg);
   const [cannotToggle, setCannotToggle] = useState(false);
   const [undoDisabled, setUndoDisabled] = useState(true);
+  const [selectedColor, setSelectedColor] = useState({ background: 'black' });
+  const [displayColorPicker, setDisplayColorPicker] = useState(false);
 
   // Set the image in the toggle button according to whether or not the user can
   // draw.
@@ -90,37 +93,11 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
     }, []);
 
     // Display a particular set of buttons based on the side this component is on.
+  let buttons;
   switch (props.side) {
     case Side.Left:
-      return (
+      buttons = (
         <span id='draw-controls'>
-        </span>
-      );
-      break;
-    case Side.Right:
-      return (
-        <span id='draw-controls'>
-          <button
-            onClick={_ => {
-                if (!undoDisabled) {
-                    SocketUtils.sendUndo(true);
-                    setUndoDisabled(true);
-                }
-            }}
-            className={'side-btn' + (undoDisabled ? ' disabled' : '')}
-            id='undo-btn'>
-            <img src={UndoImg} style={{ 'width': '30px', 'height': '30px' }} />
-          </button>
-          <button
-            onClick={_ => {
-              if (cannotToggle) return;
-
-              props.toggleCannotDraw();
-            }}
-              className={'side-btn' + (cannotToggle ? ' disabled' : '')}
-            id='brush-btn'>
-            <img src={drawToggleBtn} style={{ 'width': '30px', 'height': '30px' }} />
-          </button>
           <button
             onClick={_ => {
               if (props.currentCoordPath.width < 15) {
@@ -147,7 +124,61 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
         </span>
       );
       break;
+    case Side.Right:
+    default:
+      buttons = (
+        <span id='draw-controls'>
+          <button
+            onClick={_ => {
+                if (!undoDisabled) {
+                    SocketUtils.sendUndo(true);
+                    setUndoDisabled(true);
+                }
+            }}
+            className={'side-btn' + (undoDisabled ? ' disabled' : '')}
+            id='undo-btn'>
+            <img src={UndoImg} style={{ 'width': '30px', 'height': '30px' }} />
+          </button>
+          <button
+            onClick={_ => {
+              if (cannotToggle) return;
+
+              props.toggleCannotDraw();
+            }}
+              className={'side-btn' + (cannotToggle ? ' disabled' : '')}
+            id='brush-btn'>
+            <img src={drawToggleBtn} style={{ 'width': '30px', 'height': '30px' }} />
+          </button>
+          <button
+            onClick={_ => { setDisplayColorPicker(old => !old) }}
+            className='side-btn'
+            style = {{...selectedColor, zIndex: 99}} />
+        </span>
+      );
+      break;
   }
+
+  return (
+    <>
+      <div
+        className={'modal'}
+        style={{
+          display: displayColorPicker ? 'block' : 'none'
+        }}
+      >
+        <SketchPicker
+          color={selectedColor.background}
+          width={500}
+          onChange={(color, _) => setSelectedColor({ background: color.hex })}
+          onChangeComplete={(color, _) => {
+            props.context.strokeStyle = color.hex;
+            props.currentCoordPath.color = color.hex;
+          }}
+        />
+      </div>
+      {buttons}
+    </>
+  );
 }
 
 export default DrawControls;
