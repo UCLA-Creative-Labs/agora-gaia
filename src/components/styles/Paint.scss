@@ -81,6 +81,7 @@ button {
   height: 100%;
   background: rgba(0, 0, 0, 0.6);
   z-index: 2;
+  transition: opacity 0.3s;
 }
 
 .foreground-btn {
@@ -95,7 +96,7 @@ button {
   left: calc(50% - 300px);
   background: rgba(0, 0, 0, 0.8);
   border-radius: 20px;
-  padding: 10px;
+  padding: 20px;
   color: white;
   z-index: 98;
 }

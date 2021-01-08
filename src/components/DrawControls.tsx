@@ -189,7 +189,8 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
       <div
         className={'modal'}
         style={{
-          display: displayColorPicker ? 'block' : 'none'
+          visibility: displayColorPicker ? 'visible' : 'hidden',
+          opacity: displayColorPicker ? 1 : 0
         }}
       >
         <SketchPicker

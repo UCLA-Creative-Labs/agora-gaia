@@ -286,57 +286,57 @@ function Paint(props: PaintProps) {
         case 0:
           phase = (<>
             <h1>Welcome to Agora!</h1>
-            <h3>Welcome to a collaborative artistic experience, proudly brought to you by Creative Labs!</h3>
-            <h3>Here's a quick tutorial on how to use this website.</h3>
+            <h3>Agora is a collaborative canvas, proudly brought to you by Creative Labs.</h3>
+            <h3>Here's a quick tutorial on how to use it.</h3>
             <h4 onClick={() => setTutorialPhase(old => old+1)}>Next ➜</h4>
           </>);
           break;
         case 1:
           phase = (<>
-            <h2>The Canvas.</h2>
-            <h3>The canvas is the heart of Agora. It's where you'll create your masterpieces.
-            You can scroll using your mouse or touchpad to zoom in/out.
+            <h2>The Canvas</h2>
+            <h3>The Canvas is where you'll create your masterpieces and see others' work as well. You can zoom in or out by scrolling or using the touchpad.
             </h3>
             <h3>
-              You can only draw a stroke of limited length.
-              Once you draw a stroke, you have to wait for some time before you can draw another one, so keep an eye on the top of the page for a timer!
+              Each time you draw, you will only be able to draw a single stroke of limited length. Once you finish drawing, you will need to wait some seconds before you can draw another stroke, as indicated by the timer at the top of the page.
             </h3>
             <h4 onClick={() => setTutorialPhase(old => old+1)}>Next ➜</h4>
           </>);
           break;
         case 2:
           phase = (<>
-            <h2>This is the draw/pan toggle button.</h2>
-            <h3>Right now, it has a paintbrush icon, indicating you can draw.
-            Click this to be able to pan across the canvas, and click it again to get back to drawing.</h3>
+            <h2>Drawing</h2>
+            <h3>This is the Draw/Pan Toggle Button.</h3>
+            <h3>The paintbrush icon indicates you can draw. Clicking it will switch it to the hand icon, indicating you can now pan across the screen. Use the button to toggle between these two modes.</h3>
             <h4 onClick={() => setTutorialPhase(old => old+1)}>Next ➜</h4>
           </>);
           break;
         case 3:
           phase = (<>
-            <h2>This is the undo button.</h2>
-            <h3>If you accidentally draw a stroke you didn't want to, you'll have a few seconds to undo it before the website locks it in place. So think about your strokes wisely!</h3>
+            <h2>Undoing Actions</h2>
+            <h3>This is the Undo Button.</h3>
+            <h3>If you make a mistake, you'll have a few seconds to undo it before the website locks the stroke into place. Think before you draw and use your turn wisely!</h3>
             <h4 onClick={() => setTutorialPhase(old => old+1)}>Next ➜</h4>
           </>);
           break;
         case 4:
           phase = (<>
-            <h2>This is the color of your paintbrush.</h2>
-            <h3>Click it to display a color picker, where you can choose the perfect color for your next stroke. Click the button again or tap anywhere outside of the color picker that shows up to hide it.</h3>
+            <h2>The Palette</h2>
+            <h3>This is the color of your paintbrush.</h3>
+            <h3>Click it to display a color picker, where you can choose the perfect color for your needs. Click the button again or click anywhere outside of the color picker window to hide it.</h3>
             <h4 onClick={() => setTutorialPhase(old => old+1)}>Next ➜</h4>
           </>);
           break;
         case 5:
           phase = (<>
-            <h2>These are the brush size controls.</h2>
+            <h2>Brush Size</h2>
+            <h3>These are the brush size controls</h3>
             <h3>Use these buttons to increase or decrease the size of your brush.</h3>
             <h4 onClick={() => setTutorialPhase(old => old+1)}>Next ➜</h4>
           </>);
           break;
         case 6:
           phase = (<>
-            <h1>And that's it!</h1>
-            <h3>Happy drawing!</h3>
+            <h1>Happy drawing!</h1>
             <h4 onClick={() => {
               setTutorialPhase(-1);
               if (isLocalStorageAvailable())
