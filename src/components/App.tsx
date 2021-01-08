@@ -25,8 +25,8 @@ function App() {
     }
 
     return (
+            // <Loader ref={ref}/>
         <div id='app-wrapper'>
-            <Loader ref={ref}/>
             <Paint
                 connected={connected}
                 loaded={loaded}

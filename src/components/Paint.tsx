@@ -50,6 +50,7 @@ function Paint(props: PaintProps) {
     const [ canToggle, setCanToggle ] = useState(true);
     const [ canUndo, setCanUndo ] = useState(false);
     const [ lastSend, setLastSend ] = useState(0);
+    const [tutorialPhase, setTutorialPhase] = useState(-1);
 
     const canvasRef = useCallback(ref => { if (ref !== null) { setCanvas(ref); } }, [setCanvas]);
 
@@ -83,6 +84,8 @@ function Paint(props: PaintProps) {
 
     // If the element doesn't have a colors property, default to black + RGB
     const colors: string[] = props.colors || [ 'black', 'red', 'green', 'blue' ]
+
+    const tutorialStorageKey = 'tutorial_shown';
 
     const sendConnected = () => { props.connected(); }
     const sendLoaded = () => { props.loaded(); }
@@ -135,6 +138,13 @@ function Paint(props: PaintProps) {
         };
 
         SocketUtils.registerDrawLimit(drawLimitHandler);
+
+        if (!isLocalStorageAvailable()) setTutorialPhase(0);
+
+        const storage = window.localStorage;
+        const storedBool = JSON.parse(storage.getItem(tutorialStorageKey));
+        if (!storedBool)
+          setTutorialPhase(0);
 
         window.addEventListener('storage', storageHandler);
 
@@ -270,12 +280,92 @@ function Paint(props: PaintProps) {
         };
     }, [context, canvas, buffer]);
 
+    const renderPhase = () => {
+      let phase;
+      switch(tutorialPhase) {
+        case 0:
+          phase = (<>
+            <h1>Welcome to Agora!</h1>
+            <h3>Welcome to a collaborative artistic experience, proudly brought to you by Creative Labs!</h3>
+            <h3>Here's a quick tutorial on how to use this website.</h3>
+            <h4 onClick={() => setTutorialPhase(old => old+1)}>Next ➜</h4>
+          </>);
+          break;
+        case 1:
+          phase = (<>
+            <h2>The Canvas.</h2>
+            <h3>The canvas is the heart of Agora. It's where you'll create your masterpieces.
+            You can scroll using your mouse or touchpad to zoom in/out.
+            </h3>
+            <h3>
+              You can only draw a stroke of limited length.
+              Once you draw a stroke, you have to wait for some time before you can draw another one, so keep an eye on the top of the page for a timer!
+            </h3>
+            <h4 onClick={() => setTutorialPhase(old => old+1)}>Next ➜</h4>
+          </>);
+          break;
+        case 2:
+          phase = (<>
+            <h2>This is the draw/pan toggle button.</h2>
+            <h3>Right now, it has a paintbrush icon, indicating you can draw.
+            Click this to be able to pan across the canvas, and click it again to get back to drawing.</h3>
+            <h4 onClick={() => setTutorialPhase(old => old+1)}>Next ➜</h4>
+          </>);
+          break;
+        case 3:
+          phase = (<>
+            <h2>This is the undo button.</h2>
+            <h3>If you accidentally draw a stroke you didn't want to, you'll have a few seconds to undo it before the website locks it in place. So think about your strokes wisely!</h3>
+            <h4 onClick={() => setTutorialPhase(old => old+1)}>Next ➜</h4>
+          </>);
+          break;
+        case 4:
+          phase = (<>
+            <h2>This is the color of your paintbrush.</h2>
+            <h3>Click it to display a color picker, where you can choose the perfect color for your next stroke. Click the button again or tap anywhere outside of the color picker that shows up to hide it.</h3>
+            <h4 onClick={() => setTutorialPhase(old => old+1)}>Next ➜</h4>
+          </>);
+          break;
+        case 5:
+          phase = (<>
+            <h2>These are the brush size controls.</h2>
+            <h3>Use these buttons to increase or decrease the size of your brush.</h3>
+            <h4 onClick={() => setTutorialPhase(old => old+1)}>Next ➜</h4>
+          </>);
+          break;
+        case 6:
+          phase = (<>
+            <h1>And that's it!</h1>
+            <h3>Happy drawing!</h3>
+            <h4 onClick={() => {
+              setTutorialPhase(-1);
+              if (isLocalStorageAvailable())
+                window.localStorage.setItem(tutorialStorageKey, String(true));
+            }}>Finish ➜</h4>
+          </>);
+          break;
+        default:
+          break;
+      }
+
+      return phase;
+    }
+
     return (
         <div id='all-wrapper'>
+          { (tutorialPhase >= 0 && tutorialPhase <= 6) ?
+            <div
+              className={'modal'}>
+              <div className={'tutorial-text'}>
+                {renderPhase()}
+              </div>
+            </div> : null }
             <div id='canvas-wrapper'>
                 <DrawControls
                     side={Side.Left}
-                    currentCoordPath={currentCoordPath.current} />
+                    currentCoordPath={currentCoordPath.current}
+                    tutorialPhase={tutorialPhase}
+                />
                 <Timer
                     limit={limit}
                     lastSend={lastSend} />
@@ -561,7 +651,9 @@ function Paint(props: PaintProps) {
                     canvasScale={scale.current}
                     paintProps={props}
                     toggleCannotDraw={toggleCannotDraw}
-                    popStack={popStack}/>
+                    popStack={popStack}
+                    tutorialPhase={tutorialPhase}
+                />
               </div>
             </div>
             <br />

@@ -83,6 +83,23 @@ button {
   z-index: 2;
 }
 
+.foreground-btn {
+  z-index: 99;
+  transform: scale(1.1);
+}
+
+.tutorial-text {
+  position: fixed;
+  width: 600px;
+  top:  calc(50% - 300px);
+  left: calc(50% - 300px);
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 20px;
+  padding: 10px;
+  color: white;
+  z-index: 98;
+}
+
 .sketch-picker {
   position: fixed;
   top: calc(50% - 250px); // height of SketchPicker

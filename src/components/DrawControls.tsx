@@ -6,6 +6,9 @@ import {
   CanvasProps, DrawControlProps,
   undo, drawFromBuffer
 } from '../utils/PaintUtils';
+import {
+    isLocalStorageAvailable
+} from '../utils/StorageUtils';
 import { debug } from '../utils/Utils';
 import * as SocketUtils from '../utils/SocketUtils';
 
@@ -27,6 +30,8 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
   const [undoDisabled, setUndoDisabled] = useState(true);
   const [selectedColor, setSelectedColor] = useState({ background: 'black' });
   const [displayColorPicker, setDisplayColorPicker] = useState(false);
+
+  const previewRef = useRef(null);
 
   // Set the image in the toggle button according to whether or not the user can
   // draw.
@@ -92,6 +97,21 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
         }
     }, []);
 
+    useEffect(() => {
+      const preview = previewRef.current;
+      if (!preview || !preview.getContext) return;
+
+      const previewCtx = preview.getContext('2d');
+      const x = preview.width / 2, y = preview.height / 2;
+      const r = 2 * width / 3;
+      previewCtx.clearRect(0, 0, preview.width, preview.height);
+      previewCtx.beginPath();
+      previewCtx.arc(x, y, r, 0, 2 * Math.PI, false);
+      previewCtx.lineWidth = 0;
+      previewCtx.fillStyle = selectedColor.background;
+      previewCtx.fill();
+    }, [previewRef.current, width, selectedColor]);
+
     // Display a particular set of buttons based on the side this component is on.
   let buttons;
   switch (props.side) {
@@ -105,11 +125,17 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
                 setWidth(prev => prev + 1);
               }
             }}
-            className='side-btn'
+            className={'side-btn' + ((props.tutorialPhase == 5) ? ' foreground-btn' : '')}
             id='zoomin-btn'>
             <img src={ZoomInImg} style={{ 'width': '30px', 'height': '30px' }} />
           </button>
-          <p id='width-disp'>{width}</p>
+          <canvas
+            ref={previewRef}
+            style={{
+              marginTop: '20px'
+            }}
+            width={20} height={20}
+          ></canvas>
           <button
             onClick={_ => {
               if (props.currentCoordPath.width > 1) {
@@ -117,7 +143,7 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
                 setWidth(prev => prev - 1);
               }
             }}
-            className='side-btn'
+            className={'side-btn' + ((props.tutorialPhase == 5) ? ' foreground-btn' : '')}
             id='zoomout-btn'>
             <img src={ZoomOutImg} style={{ 'width': '30px', 'height': '30px' }} />
           </button>
@@ -135,7 +161,7 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
                     setUndoDisabled(true);
                 }
             }}
-            className={'side-btn' + (undoDisabled ? ' disabled' : '')}
+            className={'side-btn' + (undoDisabled ? ' disabled' : '') + ((props.tutorialPhase == 3) ? ' foreground-btn' : '')}
             id='undo-btn'>
             <img src={UndoImg} style={{ 'width': '30px', 'height': '30px' }} />
           </button>
@@ -145,14 +171,14 @@ function DrawControls(props: CanvasProps & DrawControlProps) {
 
               props.toggleCannotDraw();
             }}
-              className={'side-btn' + (cannotToggle ? ' disabled' : '')}
+              className={'side-btn' + (cannotToggle ? ' disabled' : '') + ((props.tutorialPhase == 2) ? ' foreground-btn' : '')}
             id='brush-btn'>
             <img src={drawToggleBtn} style={{ 'width': '30px', 'height': '30px' }} />
           </button>
           <button
             onClick={_ => { setDisplayColorPicker(old => !old) }}
-            className='side-btn'
-            style = {{...selectedColor, zIndex: 99}} />
+            className={'side-btn' + ((props.tutorialPhase == 4 || displayColorPicker) ? ' foreground-btn' : '')}
+            style = {selectedColor} />
         </span>
       );
       break;
