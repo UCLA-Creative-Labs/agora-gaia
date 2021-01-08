@@ -139,6 +139,15 @@ function Paint(props: PaintProps) {
 
         SocketUtils.registerDrawLimit(drawLimitHandler);
 
+        const resetHandler = (data: any) => {
+            debug('resetting stack and local storage');
+            setStack([]);
+            window.localStorage.clear();
+        };
+
+        // FOR RESETING LOCAL STORAGE MAYBE DO THIS TWICE A DAY?
+        SocketUtils.registerReset(resetHandler);
+
         if (!isLocalStorageAvailable()) setTutorialPhase(0);
 
         const storage = window.localStorage;
@@ -150,6 +159,7 @@ function Paint(props: PaintProps) {
 
         return () => {
             window.removeEventListener('storage', storageHandler);
+            SocketUtils.unregisterReset(resetHandler);
         }
     }, []);
 
@@ -216,17 +226,8 @@ function Paint(props: PaintProps) {
             drawFromBuffer(context, canvas, canvasOffset, buffer, scale.current);
         };
 
-        const resetHandler = (data: any) => {
-            debug('resetting stack and local storage');
-            setStack([]);
-            window.localStorage.clear();
-        };
-
         SocketUtils.registerPackage(packageHandler);
         SocketUtils.registerStroke(strokeHandler);
-
-        // FOR RESETING LOCAL STORAGE MAYBE DO THIS TWICE A DAY?
-        SocketUtils.registerReset(resetHandler);
 
         return () => {
             debug('unregistering listeners');
@@ -234,7 +235,6 @@ function Paint(props: PaintProps) {
             // SocketUtils.unregisterHandshake(handshakeHandler);
             SocketUtils.unregisterPackage(packageHandler);
             SocketUtils.unregisterStroke(strokeHandler);
-            SocketUtils.unregisterReset(resetHandler);
         }
     }, [canvas, context, isStackEmpty, scale.current]);
 
