@@ -46,7 +46,6 @@ export function unregisterAllHandshake() {
 
 // Registers a socket listener for a package event.
 export function registerPackage(callback: (data: CoordPath[]) => any) {
-    debug('REGISTERED PACKAGE HANDLER');
     socket.on('package', callback);
 }
 
