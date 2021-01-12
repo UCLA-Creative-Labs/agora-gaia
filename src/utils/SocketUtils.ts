@@ -7,8 +7,8 @@ import { debug } from './Utils';
 // If in production, use the environment variable defined as below; otherwise,
 // use the development proxy.
 const socket = process.env.NODE_ENV === 'production'
-                ? io(process.env.REACT_APP_SOCKET_SERVER)
-                : io({path: '/socket'});
+                ? io(process.env.REACT_APP_SOCKET_SERVER, {transports: ['websocket']})
+                : io({path: '/socket', transports: ['websocket']});
 
 // Upon connection, immediately send an init signal to the server to receive
 // any newer strokes.
