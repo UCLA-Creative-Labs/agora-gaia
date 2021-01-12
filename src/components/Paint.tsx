@@ -75,6 +75,8 @@ function Paint(props: PaintProps) {
     const scale = useRef(1);
     // To calculate maximum zoom-out scale
     const maxScale = useRef(1);
+    // Prevent drawing long stroke on mobile
+    const stopDrawingTouch = useRef(false);
 
     // A tuple of a list of mouse positions and a number to represent the width
     // of the line being drawn.
@@ -534,6 +536,7 @@ function Paint(props: PaintProps) {
                     }}
                     onTouchEnd = {e => {
                         e.preventDefault();
+                        stopDrawingTouch.current = false;
                         if (cannotDraw) {
                             isPanning.current = false;
                             debug('finished pan');
@@ -578,6 +581,7 @@ function Paint(props: PaintProps) {
                     }}
                     onTouchMove = {e => {
                         e.preventDefault();
+                        if (stopDrawingTouch.current) return;
 
                         const bounds = canvas.getBoundingClientRect();
                         const lastTouchPos: Coord = { x: e.touches[0].clientX - bounds.left,
@@ -622,6 +626,7 @@ function Paint(props: PaintProps) {
                                 if (props.maxStrokeLen && coordPathLen.current >= props.maxStrokeLen) {
                                     debug('stroke too long; terminating');
                                     canvas.dispatchEvent(new TouchEvent('touchend'));
+                                    stopDrawingTouch.current = true;
                                 }
                             }
                         }
