@@ -144,7 +144,7 @@ function Paint(props: PaintProps) {
         const resetHandler = (data: any) => {
             debug('resetting stack and local storage');
             setStack([]);
-            window.localStorage.clear();
+            window.localStorage.removeItem('stack');
         };
 
         // FOR RESETING LOCAL STORAGE MAYBE DO THIS TWICE A DAY?
